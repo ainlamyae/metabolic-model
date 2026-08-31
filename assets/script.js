@@ -56,6 +56,27 @@ const FAT_PCT_OF_KCAL_MAX_DEFAULT = 35;
 // plain constant rather than an overridable setting the way the two percentages above are.
 const KCAL_PER_G_FAT = 9;
 
+// The carb band's two coefficients — 45-65% of total energy from carbohydrate is the same
+// AMDR report's range for carbohydrate (Dietary Reference Intakes for Energy, Carbohydrate,
+// Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids, 2005), also carried forward
+// by the USDA Dietary Guidelines for Americans. Both ends scale off Eᵢₙ, same shape as the
+// fat band above.
+const CARB_PCT_OF_KCAL_MIN_DEFAULT = 45;
+const CARB_PCT_OF_KCAL_MAX_DEFAULT = 65;
+// Carbohydrate's fixed energy density (Atwater) — grams per kcal, same role as KCAL_PER_G_FAT.
+const KCAL_PER_G_CARB = 4;
+
+// Sleep Efficiency Factor's rate — the literature's own 2-3%/hr range, defaulting to its
+// midpoint. A per-hour cost to fat-loss efficiency, not a fixed constant, so it's tunable
+// here like every other coefficient on this sheet.
+const SLEEP_DEPRIVATION_PCT_PER_HOUR_KEY = 'SLEEP_DEPRIVATION_PCT_PER_HOUR';
+const SLEEP_DEPRIVATION_PCT_PER_HOUR_DEFAULT = 2.5;
+// What "hitting your sleep target" means — the plan sleep length (s) is measured against
+// this. The ledger app reads it off a separate Settings row (SLEEP_TARGET_HOURS); there's
+// nothing to store here, so it's a plain constant, and s defaults to exactly this — an
+// untouched box means "assume you hit it", i.e. zero effect.
+const SLEEP_TARGET_HOURS_DEFAULT = 8;
+
 // Intensity assumed for the activity target (3.0 walking, 5.0 compound
 // lifting, 7.0 jogging).
 const ACTIVITY_MET_FALLBACK = 3.5;
@@ -154,6 +175,41 @@ function activityTargetKcal(bodyMassKg) {
   return metKcal(activityMet(), bodyMassKg, getSetting('ACTIVITY_TARGET_MIN', ACTIVITY_TARGET_MIN_DEFAULT));
 }
 
+// Sleep Efficiency Factor: 1 − rate × hours below target — the per-hour cost a short night
+// has on fat-loss efficiency. 1.0 at or above target, floored at 0 rather than going
+// negative on an extreme night. The rate itself is a sheet input (γ,
+// SLEEP_DEPRIVATION_PCT_PER_HOUR_KEY), not a constant.
+function sleepEfficiencyFactor(sleepHours, sleepTargetHours) {
+  if (sleepHours === null || sleepHours === undefined || !sleepTargetHours) return 1;
+  const hoursBelow = Math.max(0, sleepTargetHours - sleepHours);
+  const pctPerHour = getSetting(SLEEP_DEPRIVATION_PCT_PER_HOUR_KEY, SLEEP_DEPRIVATION_PCT_PER_HOUR_DEFAULT);
+  return Math.max(0, 1 - (pctPerHour / 100) * hoursBelow);
+}
+
+// Never divide the deficit up by more than this — realistic inputs never come close, but a
+// typed extreme shouldn't be able to send the target intake to ±Infinity.
+const SLEEP_EFFICIENCY_FACTOR_MIN = 0.2;
+
+// The FORWARD question: given a night that only delivers `sleepEfficiencyFactor` of full
+// value, how much BIGGER does the raw deficit need to be to still realize `rawDeficitKcal`/day
+// of actual fat loss? Only on an actual deficit; a surplus or maintenance passes through
+// unchanged, since poor sleep isn't modelled as making a bulk MORE effective. Shared by
+// calorieTargetDetail and TAU, so neither can quote a different D for the same inputs.
+function sleepAdjustedDeficitKcal(rawDeficitKcal, planSleepHours, sleepTargetHours) {
+  // Read once and carried in the result, rather than re-read by every caller that wants to
+  // trace η back to γ — so a typed γ reaches the trace the same way it reached the factor,
+  // off this one read.
+  const pctPerHour = getSetting(SLEEP_DEPRIVATION_PCT_PER_HOUR_KEY, SLEEP_DEPRIVATION_PCT_PER_HOUR_DEFAULT);
+  if (rawDeficitKcal === null || rawDeficitKcal <= 0) {
+    return { rawDeficitKcal, deficitKcal: rawDeficitKcal, sleepDeprivationEffectKcal: 0, factor: 1, pctPerHour };
+  }
+  const factor = sleepEfficiencyFactor(planSleepHours, sleepTargetHours);
+  const deficitKcal = rawDeficitKcal / Math.max(factor, SLEEP_EFFICIENCY_FACTOR_MIN);
+  return {
+    rawDeficitKcal, deficitKcal, sleepDeprivationEffectKcal: Math.round(deficitKcal - rawDeficitKcal), factor, pctPerHour,
+  };
+}
+
 // The daily intake target at ONE body mass and age — the single identity
 // every mode on the sheet rearranges. `age` is a direct parameter (the ledger
 // app instead reads a stored birth date; there's nothing to store here, so
@@ -170,10 +226,27 @@ function calorieTargetDetail(bodyMassKg, age) {
   const bmr = bmrKcal(bodyMassKg, heightCm, age, sex);
   const activityKcal = activityTargetKcal(bodyMassKg);
 
-  const divisor = tefDivisor();
-  const kcal = Math.round((bmr + activityKcal - (weeklyFatLossKg * GENERIC_KCAL_PER_KG_FAT) / 7) / divisor);
+  // A negative WEEKLY_FAT_LOSS_KG (lean bulk) makes this a surplus and lifts the target
+  // above maintenance, flipping it from a ceiling to a floor.
+  const rawDeficit = (weeklyFatLossKg * GENERIC_KCAL_PER_KG_FAT) / 7;
 
-  return { kcal, bmr, activityKcal, weeklyFatLossKg, tefKcal: kcal * (1 - divisor), tefDivisor: divisor };
+  // PLAN_SLEEP_HOURS defaults to the sleep target itself — "assume you hit it" — so an
+  // untouched setting keeps this identical to the arithmetic before the sleep model
+  // existed. Type fewer hours in `s` and the deficit below grows to compensate for the
+  // lost efficiency (see sleepAdjustedDeficitKcal).
+  const sleepTargetHours = SLEEP_TARGET_HOURS_DEFAULT;
+  const planSleepHours = getSetting('PLAN_SLEEP_HOURS', sleepTargetHours);
+  const {
+    deficitKcal: deficit, sleepDeprivationEffectKcal, factor, pctPerHour,
+  } = sleepAdjustedDeficitKcal(rawDeficit, planSleepHours, sleepTargetHours);
+
+  const divisor = tefDivisor();
+  const kcal = Math.round((bmr + activityKcal - deficit) / divisor);
+
+  return {
+    kcal, bmr, activityKcal, weeklyFatLossKg, rawDeficit, deficit, sleepDeprivationEffectKcal, factor, pctPerHour,
+    planSleepHours, sleepTargetHours, tefKcal: kcal * (1 - divisor), tefDivisor: divisor,
+  };
 }
 
 // Δm as a share of body mass. 0.5-1% of body mass per week is the usual
@@ -349,6 +422,13 @@ const FORMULA_FIELDS = [
   { key: 'KCAL_PER_MET_KG_MIN', inputId: 'formula-met-o2', fallback: () => MET_ML_O2_PER_KG_MIN_DEFAULT },
   { key: 'ACTIVITY_MET', inputId: 'formula-met', fallback: () => activityMet() },
   { key: 'ACTIVITY_TARGET_MIN', inputId: 'formula-activity-min', fallback: () => ACTIVITY_TARGET_MIN_DEFAULT },
+  // Defaults to the sleep target itself — "assume you hit it" — so an untouched box keeps
+  // producing the exact deficit this sheet always has. Type fewer hours and D (below)
+  // grows to compensate for the lost fat-loss efficiency.
+  { key: 'PLAN_SLEEP_HOURS', inputId: 'formula-plan-sleep-hours', fallback: () => SLEEP_TARGET_HOURS_DEFAULT },
+  // The literature's own 2-3%/hr range, defaulting to its midpoint — a rate, not a fixed
+  // constant, so it's tunable here like every other coefficient on this sheet.
+  { key: SLEEP_DEPRIVATION_PCT_PER_HOUR_KEY, inputId: 'formula-sleep-deprivation-pct', fallback: () => SLEEP_DEPRIVATION_PCT_PER_HOUR_DEFAULT },
   // No default: a blank weekly loss is exactly what opens the sheet on 0
   // (maintenance) rather than inventing a deficit.
   { key: 'WEEKLY_FAT_LOSS_KG', inputId: 'formula-weekly-loss', fallback: () => 0 },
@@ -380,6 +460,14 @@ const FIBER_FORMULA_FIELDS = [
 const FAT_FORMULA_FIELDS = [
   { key: 'FAT_PCT_OF_KCAL_MIN', inputId: 'formula-fat-pct-min', fallback: () => FAT_PCT_OF_KCAL_MIN_DEFAULT },
   { key: 'FAT_PCT_OF_KCAL_MAX', inputId: 'formula-fat-pct-max', fallback: () => FAT_PCT_OF_KCAL_MAX_DEFAULT },
+];
+
+// The carb band's two coefficients, kept out of FORMULA_FIELDS for the same reason as
+// FAT_FORMULA_FIELDS: carb feeds no calorie identity, so a blank one should only stop carb
+// from being computed, not the target.
+const CARB_FORMULA_FIELDS = [
+  { key: 'CARB_PCT_OF_KCAL_MIN', inputId: 'formula-carb-pct-min', fallback: () => CARB_PCT_OF_KCAL_MIN_DEFAULT },
+  { key: 'CARB_PCT_OF_KCAL_MAX', inputId: 'formula-carb-pct-max', fallback: () => CARB_PCT_OF_KCAL_MAX_DEFAULT },
 ];
 
 const FORMULA_SOLVE_FIELD_ID = {
@@ -477,10 +565,12 @@ Resting metabolic rate — Mifflin-St Jeor (1990)
     BMR  =  10×m  +  6.25×h  −  5×a  +  σ
 Activity burn at the daily target — ACSM metabolic equation
     Eₐ   =  MET × m × τ × κ / ε
+Sleep Efficiency Factor — reduction in fat-loss efficiency per hour of sleep debt
+    η    =  1 − (γ/100) × max(0, s_target − s)
 Weekly fat loss as a share of body mass — 0.5–1%/week band
     Δm%  =  100 × Δm / m
-Daily energy deficit implied by the weekly fat-loss target
-    D    =  (Δm × ρ) / 7
+Daily energy deficit implied by the weekly fat-loss target, short sleep needs more of it
+    D    =  (Δm × ρ / 7) / η
 Thermic effect of food — a share of the very intake being solved for
     TEF  =  f × Eᵢₙ
 Target daily intake — TEF folded in by solving, not by adding
@@ -517,7 +607,10 @@ Fiber band — a floor from daily intake, a ceiling from body weight
     F_max =  f_max × m
 Fat band — both ends a share of intake, 20-35% AMDR
     G_min =  (k_min/100 × Eᵢₙ) / 9
-    G_max =  (k_max/100 × Eᵢₙ) / 9`;
+    G_max =  (k_max/100 × Eᵢₙ) / 9
+Carb band — both ends a share of intake, 45-65% AMDR
+    C_min =  (q_min/100 × Eᵢₙ) / 4
+    C_max =  (q_max/100 × Eᵢₙ) / 4`;
 
 function formulaFieldValue(field) {
   return getSetting(field.key, null) ?? field.fallback();
@@ -641,6 +734,14 @@ function renderFormulaSubstituted(rows, plan = null) {
   } catch (err) {
     console.error('Fat band failed to render', err);
   }
+  // Independent of the fat block above too — reads only Eᵢₙ, no body mass — but guarded
+  // separately for the same reason.
+  let carbRows = [];
+  try {
+    carbRows = renderCarbFields();
+  } catch (err) {
+    console.error('Carb band failed to render', err);
+  }
   let glycogenRows = [];
   try {
     glycogenRows = renderGlycogenSwingField();
@@ -656,9 +757,9 @@ function renderFormulaSubstituted(rows, plan = null) {
 
   // LBM leads (it sits with the profile, ahead of everything `rows` itself starts with),
   // then `rows` — which carries Δm%, TEF and BMI_g inline, at the legend's own positions —
-  // then the adaptation pair, then glycogen, protein, fiber and fat: the same order the
-  // legend lists them in.
-  [...lbmRows, ...(rows ?? []), ...correctionRows, ...glycogenRows, ...proteinRows, ...fiberRows, ...fatRows].forEach(([label, value]) => {
+  // then the adaptation pair, then glycogen, protein, fiber, fat and carb: the same order
+  // the legend lists them in.
+  [...lbmRows, ...(rows ?? []), ...correctionRows, ...glycogenRows, ...proteinRows, ...fiberRows, ...fatRows, ...carbRows].forEach(([label, value]) => {
     const p = document.createElement('p');
     const strong = document.createElement('strong');
     strong.textContent = `${label}: `;
@@ -885,6 +986,46 @@ function renderFatFields() {
   return [
     ['G_min', `(${pctMin}% × ${einKcal}) / ${KCAL_PER_G_FAT}  =  ${minG} g/day`],
     ['G_max', `(${pctMax}% × ${einKcal}) / ${KCAL_PER_G_FAT}  =  ${maxG} g/day`],
+  ];
+}
+
+// The carb band: both ends a share of Eᵢₙ (45-65%, the IOM's Acceptable Macronutrient
+// Distribution Range for adults) converted to grams at carbohydrate's fixed 4 kcal/g energy
+// density — same shape as readFatFormula, just the AMDR's other end and Atwater factor.
+//
+// Reads formula-ein directly, same reason readFatFormula does: by the time renderCarbFields
+// runs (from renderFormulaSubstituted, after the calorie half of the sheet), that box
+// already holds this render's Eᵢₙ — typed or solved, in every mode.
+function readCarbFormula() {
+  const einKcal = formulaNumber('formula-ein');
+  const pctMin = formulaNumber('formula-carb-pct-min');
+  const pctMax = formulaNumber('formula-carb-pct-max');
+  if (einKcal === null || pctMin === null || pctMax === null) return null;
+
+  return {
+    einKcal, pctMin, pctMax,
+    minG: Math.round((pctMin / 100) * einKcal / KCAL_PER_G_CARB),
+    maxG: Math.round((pctMax / 100) * einKcal / KCAL_PER_G_CARB),
+  };
+}
+
+// The two carb boxes and their trace rows — same pairing and same dash-on-missing-input
+// convention renderFatFields uses.
+function renderCarbFields() {
+  const carb = readCarbFormula();
+
+  if (carb === null) {
+    ['formula-carb-min', 'formula-carb-max'].forEach((id) => setComputedField(id, '—'));
+    return [];
+  }
+
+  const { einKcal, pctMin, pctMax, minG, maxG } = carb;
+  setComputedField('formula-carb-min', String(minG));
+  setComputedField('formula-carb-max', String(maxG));
+
+  return [
+    ['C_min', `(${pctMin}% × ${einKcal}) / ${KCAL_PER_G_CARB}  =  ${minG} g/day`],
+    ['C_max', `(${pctMax}% × ${einKcal}) / ${KCAL_PER_G_CARB}  =  ${maxG} g/day`],
   ];
 }
 
@@ -1117,6 +1258,41 @@ function renderTefField() {
   return [['TEF', `${tefPct}% × ${einKcal}  =  ${tefKcal} kcal/day`]];
 }
 
+// The `δ` box and its trace rows (η, δ) — always as a pair with the box, so the number shown
+// and the arithmetic behind it come from one call. `sleepInfo` is `{ weeklyFatLossKg,
+// rawDeficit, deficit, sleepDeprivationEffectKcal, factor, pctPerHour, planSleepHours,
+// sleepTargetHours }` — either calorieTargetDetail's own return (EIN/FIXED_PCT) or the
+// equivalent object TAU builds locally from the same sleepAdjustedDeficitKcal call.
+// `null` in TARGET_MASS and DELTA_M: both those modes reverse-solve D FROM a typed Eᵢₙ
+// rather than building it from a target rate, so "how much bigger does D need to be" is a
+// question that doesn't arise there.
+function renderSleepDeprivationField(sleepInfo) {
+  if (sleepInfo === null) {
+    setComputedField('formula-deprivation-effect', '—');
+    return [];
+  }
+  const { rawDeficit, sleepDeprivationEffectKcal, factor, pctPerHour, planSleepHours, sleepTargetHours } = sleepInfo;
+  setComputedField('formula-deprivation-effect', String(sleepDeprivationEffectKcal));
+  // Only when there is one: at s ≥ s_target the identity is true and empty, same reason
+  // TEF's row above is skipped at f = 0.
+  if (sleepDeprivationEffectKcal <= 0) return [];
+  const factorRounded = Math.round(factor * 1000) / 1000;
+  return [
+    ['η', `1 − (${pctPerHour}/100) × max(0, ${sleepTargetHours} − ${planSleepHours})  =  ${factorRounded}`],
+    ['δ', `${Math.round(rawDeficit)} / ${factorRounded} − ${Math.round(rawDeficit)}  =  ${sleepDeprivationEffectKcal} kcal/day`],
+  ];
+}
+
+// The D row itself, in whichever form applies: the plain rate this sheet shows when sleep
+// isn't costing anything, or that same rate divided by η when it is — so a reader can trace
+// exactly where the extra kcal in δ above came from.
+function formulaDeficitTraceLine(sleepInfo) {
+  const raw = `${sleepInfo.weeklyFatLossKg} × 7700 / 7`;
+  if (sleepInfo.sleepDeprivationEffectKcal <= 0) return `${raw}  =  ${Math.round(sleepInfo.deficit)} kcal/day`;
+  const factorRounded = Math.round(sleepInfo.factor * 1000) / 1000;
+  return `(${raw}) / ${factorRounded}  =  ${Math.round(sleepInfo.deficit)} kcal/day`;
+}
+
 function renderCorrectionFields(plan) {
   const bmrEl = 'formula-bmr-adapt';
   const plateauEl = 'formula-plateau-adapt';
@@ -1124,6 +1300,7 @@ function renderCorrectionFields(plan) {
 
   if (plan === null) {
     ['formula-bmr', 'formula-activity-kcal', 'formula-maintenance', 'formula-deficit', bmrEl, plateauEl].forEach((id) => setComputedField(id, '—'));
+    renderSleepDeprivationField(null);
     return [];
   }
 
@@ -1221,14 +1398,18 @@ function renderFormulaPreview() {
     setComputedField('formula-ein', String(Math.round(detail.kcal)));
     renderFormulaDaysField(proj, { bodyMassKg, targetKg });
 
-    const deficit = (detail.weeklyFatLossKg * GENERIC_KCAL_PER_KG_FAT) / 7;
+    // calorieTargetDetail already ran the sleep adjustment (see sleepAdjustedDeficitKcal
+    // above) — `detail` IS the sleepInfo shape renderSleepDeprivationField wants, so this
+    // mode reads the deficit straight off it rather than recomputing the raw rate.
+    const deficit = detail.deficit;
     const bRounded = Math.round(b * 100) / 100;
     const eqRounded = Math.round(((detail.kcal - a) / b) * 10) / 10;
     const rows = [
       bmrRow,
       ['Eₐ', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(detail.activityKcal)} kcal/day`],
+      ...renderSleepDeprivationField(detail),
       ...renderWeeklyLossPctField(),
-      ['D', `${detail.weeklyFatLossKg} × 7700 / 7  =  ${Math.round(deficit)} kcal/day`],
+      ['D', formulaDeficitTraceLine(detail)],
       ...renderTefField(),
       ...formulaEinRows(coefficients, {
         bmr: detail.bmr, activityKcal: detail.activityKcal, deficit, einKcal: detail.kcal,
@@ -1256,9 +1437,22 @@ function renderFormulaPreview() {
 
   if (mode === 'TAU') {
     const deltaM = preview.WEEKLY_FAT_LOSS_KG;
-    const deficit = (deltaM * GENERIC_KCAL_PER_KG_FAT) / 7;
     const targetKg = preview.BODY_MASS_TARGET_KG;
     const knownField = dualKnownField.TAU;
+
+    // Δm is the fixed known in BOTH directions of this mode — only τ (and, in the
+    // days-known direction, Eᵢₙ) is being solved for — so the sleep adjustment applies the
+    // same forward way calorieTargetDetail's own does, regardless of which box drove the
+    // solve.
+    const planSleepHours = preview.PLAN_SLEEP_HOURS;
+    const sleepTargetHours = SLEEP_TARGET_HOURS_DEFAULT;
+    const rawDeficit = (deltaM * GENERIC_KCAL_PER_KG_FAT) / 7;
+    const { deficitKcal: deficit, sleepDeprivationEffectKcal, factor, pctPerHour } = withFormulaOverrides(
+      preview, () => sleepAdjustedDeficitKcal(rawDeficit, planSleepHours, sleepTargetHours),
+    );
+    const sleepInfo = {
+      weeklyFatLossKg: deltaM, rawDeficit, deficit, sleepDeprivationEffectKcal, factor, pctPerHour, planSleepHours, sleepTargetHours,
+    };
 
     const shape = maintenanceAffineCoefficients({ ...profile, tau: 0 });
     const divisor = shape.tefDivisor;
@@ -1309,8 +1503,9 @@ function renderFormulaPreview() {
     rows.push(
       bmrRow,
       ['Eₐ', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
+      ...renderSleepDeprivationField(sleepInfo),
       ...renderWeeklyLossPctField(),
-      ['D', `${deltaM} × 7700 / 7  =  ${Math.round(deficit)} kcal/day`],
+      ['D', formulaDeficitTraceLine(sleepInfo)],
       ...renderTefField(),
       ...formulaEinRows(coefficients, { bmr, activityKcal, deficit, einKcal: einForDisplay }),
       ...renderTargetBmiField(),
@@ -1348,6 +1543,11 @@ function renderFormulaPreview() {
 
     const bRounded = Math.round(b * 100) / 100;
     const eqRounded = Math.round(equilibriumKg * 10) / 10;
+    // No BMR/Eₐ/D/Eᵢₙ preamble here: those describe maintenance at the CURRENT mass, which
+    // this mode never claims equals the typed Eᵢₙ. D isn't being built from a target rate
+    // here — Eᵢₙ is typed — so there's no forward "how much bigger does D need to be"
+    // question for the sleep adjustment to answer; dashed rather than computed.
+    renderSleepDeprivationField(null);
     renderFormulaSubstituted([
       ...renderTefField(),
       ...formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }),
@@ -1377,6 +1577,10 @@ function renderFormulaPreview() {
   const { a, b } = coefficients;
   const activityKcal = withFormulaOverrides(preview, () => activityTargetKcal(bodyMassKg));
   const knownField = dualKnownField.DELTA_M;
+  // D is reverse-solved FROM Eᵢₙ or m_g in this mode (below), never built from a target
+  // rate — so, same as TARGET_MASS, there's no forward question for the sleep adjustment
+  // to answer here; dashed rather than computed.
+  renderSleepDeprivationField(null);
 
   let einForDisplay;
   let decay;
@@ -1459,7 +1663,7 @@ function renderFormulaPreview() {
 // Fills every box from the default demo profile — what a fresh load, and
 // Reset, both seed the sheet with.
 function loadDefaultInputs() {
-  [...FORMULA_FIELDS, ...PROTEIN_FORMULA_FIELDS, ...FIBER_FORMULA_FIELDS, ...FAT_FORMULA_FIELDS, ...ADAPT_FORMULA_FIELDS].forEach((field) => {
+  [...FORMULA_FIELDS, ...PROTEIN_FORMULA_FIELDS, ...FIBER_FORMULA_FIELDS, ...FAT_FORMULA_FIELDS, ...CARB_FORMULA_FIELDS, ...ADAPT_FORMULA_FIELDS].forEach((field) => {
     document.getElementById(field.inputId).value = formulaFieldValue(field);
   });
   document.getElementById('formula-body-mass-smooth').value = DEFAULT_BODY_MASS_KG;
@@ -1486,6 +1690,7 @@ function wireSheet() {
     ...PROTEIN_FORMULA_FIELDS.map((f) => f.inputId),
     ...FIBER_FORMULA_FIELDS.map((f) => f.inputId),
     ...FAT_FORMULA_FIELDS.map((f) => f.inputId),
+    ...CARB_FORMULA_FIELDS.map((f) => f.inputId),
     ...ADAPT_FORMULA_FIELDS.map((f) => f.inputId),
     'formula-body-mass-smooth', 'formula-height', 'formula-age',
     'formula-glycogen-skeletal-frac', 'formula-glycogen-per-kg-muscle', 'formula-glycogen-liver',
