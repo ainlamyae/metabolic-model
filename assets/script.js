@@ -1,4 +1,4 @@
-// Metabolic Playground — standalone extraction of the "Tune" sheet from the
+// Metabolic Model — standalone extraction of the "Tune" sheet from the
 // ledger app's Health Indicator panel. No saving, no pinning: every box is
 // either typed or computed live, and reloading the page resets it to the
 // default profile below. `currentSettings` stays permanently empty — it
