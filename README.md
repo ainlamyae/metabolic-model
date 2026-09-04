@@ -106,7 +106,7 @@ Skeletal muscle stores glycogen at a density g_musc of roughly 13–15 g per kg 
 
 ### Dietary Requirements
 
-The remaining four bands — protein, fiber, fat, and carbohydrate — set healthy daily ranges for diet composition rather than for the size of the energy deficit itself, each scaled to lean mass or to intake, in the four subsections below.
+The remaining four bands — protein, dietary fiber, fat, and carbohydrate — set healthy daily ranges for diet composition rather than for the size of the energy deficit itself, each scaled to lean mass or to intake, in the four subsections below.
 
 #### Protein Requirements
 
@@ -117,7 +117,7 @@ Protein needs for energy-restricted, resistance-trained individuals with low bod
 
 #### Dietary Fiber Requirements
 
-Fiber intake is recommended relative to energy intake via a floor coefficient f_min of roughly 14 g per 1,000 kcal consumed, while a practical upper ceiling f_max is instead scaled to body weight, per the USDA Dietary Guidelines for Americans \cite{ref_usda2020}. These two different bases give the lower and upper healthy daily fiber amounts, F_min and F_max, in eqn. \eqref{eqn_fmin} and eqn. \eqref{eqn_fmax} respectively.
+Dietary fiber intake is recommended relative to energy intake via a floor coefficient f_min of roughly 14 g per 1,000 kcal consumed, while a practical upper ceiling f_max is instead scaled to body weight, per the USDA Dietary Guidelines for Americans \cite{ref_usda2020}. These two different bases give the lower and upper healthy daily dietary fiber amounts, F_min and F_max, in eqn. \eqref{eqn_fmin} and eqn. \eqref{eqn_fmax} respectively.
 
     F_{min} = f_{min} × \frac{E_{in}}{1000} {#eqn_fmin}
     F_{max} = f_{max} × m̄ {#eqn_fmax}
