@@ -1,0 +1,261 @@
+% A content fragment, meant to be \input{} or \include{}d from a master
+% document that supplies \documentclass, packages (amsmath, unicode-math +
+% fontspec for the raw Unicode math symbols below — compile the master with
+% xelatex or lualatex), \begin{document}/\end{document}, and its own
+% \bibliographystyle/\bibliography pointing at "4 References.bib".
+
+\section{Human Metabolic System Diagram}
+
+\input{1 Human Metabolic System Diagram}
+
+\section{Human Metabolic System Model}
+
+\subsection{Human Body Profile}
+
+The following four subsections establish the physical profile — parameters, state variable, and the derived indices built from them — that the rest of the model reads from.
+
+\subsubsection{Human Anthropometric Parameters}
+
+Height (h), age (a), and sex (σ) are the model's fixed anthropometric and demographic parameters — individual-specific quantities that do not evolve over the timescale of the energy-balance dynamics, and enter the equations as coefficients rather than as evolving quantities.
+
+\subsubsection{Human Body Mass State Variable}
+
+Body mass (m) is the model's state variable — the one quantity that actually evolves over time, changing under the energy-balance feedback loop and, in turn, feeding back into that same loop the next day. Because a single day's reading of m fluctuates with water and glycogen rather than clean mass change, the model reads its 7-day rolling average, m̄ — eqn.~\eqref{eqn_msmo} — instead.
+
+\begin{equation}
+\label{eqn_msmo}
+m̄ = \frac{1}{7} × Σ m(t−i), \quad i = 0…6
+\end{equation}
+
+\subsubsection{Healthy Human Body Mass Index}
+
+The healthy body mass m_g can equivalently be expressed as a healthy body mass index, BMI_g, computed from m_g and height h. A BMI between 18.5 and 24.9 is the World Health Organization's healthy-weight band \cite{ref_who1995}, and this figure is flagged when it falls outside that range. The relationship between m_g and BMI_g is given in eqn.~\eqref{eqn_bmig}.
+
+\begin{equation}
+\label{eqn_bmig}
+BMI_{g} = \frac{m_{g}}{(h/100)^{2}}
+\end{equation}
+
+\subsubsection{Human Lean Body Mass Parameter}
+
+Lean body mass (LBM) is estimated from body mass, height, and sex by the Boer (1984) formula \cite{ref_boer1984}, applied sex-specifically — eqn.~\eqref{eqn_lbmm} for males, eqn.~\eqref{eqn_lbmf} for females.
+
+\begin{equation}
+\label{eqn_lbmm}
+LBM = 0.407×m̄ + 0.267×h − 19.2
+\end{equation}
+\begin{equation}
+\label{eqn_lbmf}
+LBM = 0.252×m̄ + 0.473×h − 48.3
+\end{equation}
+
+\subsection{Energy Balance Components}
+
+The following six subsections build up the daily energy balance itself — resting and activity expenditure, the sleep and food-related corrections to it, the weekly rate it has to sustain, and the daily intake that identity solves for.
+
+\subsubsection{Resting Metabolic Rate}
+
+The Katch-McArdle equation predicts resting metabolic rate directly from lean body mass rather than from age and sex, reflecting that metabolically active tissue — not fat mass — drives resting energy expenditure \cite{ref_katch1996}, as given in eqn.~\eqref{eqn_bmrk}.
+
+\begin{equation}
+\label{eqn_bmrk}
+BMR = 370 + 21.6×LBM
+\end{equation}
+
+The Mifflin-St Jeor equation instead predicts resting metabolic rate from body mass, height, age, and sex, and was derived by regression on indirect-calorimetry measurements from 498 healthy adults \cite{ref_mifflin1990}, as given in eqn.~\eqref{eqn_bmrm}; it serves as the model's default resting-metabolic-rate formula.
+
+\begin{equation}
+\label{eqn_bmrm}
+BMR = 10×m̄ + 6.25×h − 5×a + σ
+\end{equation}
+
+\subsubsection{Activity Burn}
+
+Activity burn quantifies the additional energy expended by scheduled physical activity, computed from metabolic equivalents (MET), body mass, activity duration (τ), oxygen uptake per MET (κ), and the oxygen energy yield (ε), following the generalized metabolic equations of the American College of Sports Medicine \cite{ref_acsm2017}, as given in eqn.~\eqref{eqn_eact}.
+
+\begin{equation}
+\label{eqn_eact}
+E_{a} = \frac{MET × m̄ × τ × κ}{ε}
+\end{equation}
+
+\subsubsection{Sleep Deprivation Effect}
+
+Insufficient sleep has been shown to reduce fat loss and increase lean-mass loss during caloric restriction \cite{ref_nedeltcheva2010}, so a given energy deficit yields less fat loss on a short night than on a full one. The Sleep Efficiency Factor η captures this reduction as a function of the sleep deprivation rate (γ), the assumed desire sleep (s\_d), and actual sleep length (s), as given in eqn.~\eqref{eqn_slef}.
+
+\begin{equation}
+\label{eqn_slef}
+η = 1 − \frac{γ}{100} × \max(0, s_{d} − s)
+\end{equation}
+
+\subsubsection{Weekly Fat Loss Rate}
+
+A weekly body-mass loss of 0.5–1\% is the range associated with preserving lean mass and strength during caloric restriction in trained individuals, whereas faster loss increasingly comes at the expense of lean tissue \cite{ref_garthe2011}. This share of body mass is defined in eqn.~\eqref{eqn_dmpc}. There, Δm is the desire weekly fat loss in kilograms, and Δm\% expresses that loss as a percentage of the current body mass m̄. The corresponding daily energy deficit D is then obtained by converting that weekly fat loss into a daily figure via the fat energy density ρ, adjusted by the Sleep Efficiency Factor η, as given in eqn.~\eqref{eqn_defc}.
+
+\begin{equation}
+\label{eqn_dmpc}
+Δm\% = 100 × \frac{Δm}{m̄}
+\end{equation}
+\begin{equation}
+\label{eqn_defc}
+D = \frac{Δm × ρ}{7 × η}
+\end{equation}
+
+\subsubsection{Thermic Effect of Food}
+
+Digesting, absorbing, and metabolizing food itself consumes energy — the thermic effect of food (TEF) — typically amounting to 5–15\% of daily energy expenditure on a mixed diet, with protein eliciting the largest effect per calorie \cite{ref_westerterp2004}. The thermic cost differs by macronutrient — commonly cited figures put protein near 20–30\% of its own calories, carbohydrate near 5–10\%, and fat near 0–3\% \cite{ref_westerterp2004} — but here TEF is modeled as a single fixed share f of the desire daily intake (Eᵢₙ, introduced below) rather than a macronutrient-weighted sum, as given in eqn.~\eqref{eqn_tefq}, and is folded into the intake identity by solving rather than by simple addition.
+
+\begin{equation}
+\label{eqn_tefq}
+TEF = f × E_{in}
+\end{equation}
+
+\subsubsection{Desire Daily Intake}
+
+The desire daily intake Eᵢₙ is the calorie level that, net of the thermic effect of food, still leaves the desired deficit D on top of maintenance (BMR + Eₐ). Because TEF is itself a share of Eᵢₙ rather than a fixed amount, the identity is solved for Eᵢₙ directly — placing (1 − f) in the denominator — instead of treating TEF as a further subtraction, as given in eqn.~\eqref{eqn_eink}.
+
+\begin{equation}
+\label{eqn_eink}
+E_{in} = BMR + E_{a} + TEF − D = \frac{BMR + E_{a} − D}{1 − f}
+\end{equation}
+
+\subsection{Maintenance and Mass Trajectory}
+
+Maintenance energy expenditure M(m̄) = A + B×m̄ is affine in body mass under either resting-metabolic-rate formula, with the coefficients A and B given in eqns.~\eqref{eqn_amif}–\eqref{eqn_bkat}. Under Katch-McArdle, c\_m, c\_h, and c\_0 are the same sex-specific Boer coefficients from eqn.~\eqref{eqn_lbmm}/\eqref{eqn_lbmf} (0.407, 0.267, −19.2 for males; 0.252, 0.473, −48.3 for females), substituted in place of LBM so A and B stay linear in h alone. Holding intake Eᵢₙ fixed then drives body mass toward a single equilibrium m∞ = (Eᵢₙ − A)/B, as given in eqn.~\eqref{eqn_meqm}, and mass approaches that equilibrium exponentially over the elapsed time t (in days) rather than linearly — the same first-order dynamics used to model human body-weight change under sustained energy imbalance \cite{ref_chow2008} — as given in eqn.~\eqref{eqn_mdec}, with t to a healthy mass following from inverting that decay in eqn.~\eqref{eqn_tday}.
+
+When a fixed weekly percentage of body mass Δm\% is held instead of a fixed intake, the loop closes differently: mass is re-derived from itself every period rather than converging on an equilibrium, giving proportional decay with no plateau, as given in eqns.~\eqref{eqn_mprp}–\eqref{eqn_tprp}.
+
+Metabolic adaptation drags this trajectory further: sustained dieting lowers BMR faster than the lost mass alone explains, growing with weeks on the diet (t/7) up to a ceiling λt\_max ≈ 10–15\%, as given in eqn.~\eqref{eqn_ladp}, and dragging BMR down by that same factor, as given in eqn.~\eqref{eqn_bmra}. Because only the BMR-derived half of A and B actually depends on metabolic rate, the adapted coefficients scale just that half, per eqns.~\eqref{eqn_amta}–\eqref{eqn_batk}, giving an adapted equilibrium m∞\_adp — sitting above the naively-computed m∞, which is the overshoot a constant-BMR forecast predicts — as given in eqn.~\eqref{eqn_mplt}.
+
+\begin{equation}
+\label{eqn_amif}
+A = \frac{6.25×h − 5×a + σ}{1 − f} \quad \text{under Mifflin}
+\end{equation}
+\begin{equation}
+\label{eqn_bmif}
+B = \frac{10 + (MET × τ × κ / ε)}{1 − f} \quad \text{under Mifflin}
+\end{equation}
+\begin{equation}
+\label{eqn_akat}
+A = \frac{370 + 21.6×(c_{h}×h + c_{0})}{1 − f} \quad \text{under Katch}
+\end{equation}
+\begin{equation}
+\label{eqn_bkat}
+B = \frac{21.6×c_{m} + (MET × τ × κ / ε)}{1 − f} \quad \text{under Katch}
+\end{equation}
+\begin{equation}
+\label{eqn_meqm}
+m∞ = \frac{E_{in} − A}{B}
+\end{equation}
+\begin{equation}
+\label{eqn_mdec}
+m̄(t) = m∞ + (m̄ − m∞) × e^{−B×t/ρ}
+\end{equation}
+\begin{equation}
+\label{eqn_tday}
+t = \frac{ρ}{B} × \ln\!\left[ \frac{m̄ − m∞}{m_{g} − m∞} \right]
+\end{equation}
+\begin{equation}
+\label{eqn_mprp}
+m̄(t) = m̄ × (1 − Δm\%/100)^{t/7}
+\end{equation}
+\begin{equation}
+\label{eqn_tprp}
+t = \frac{7 × \ln(m̄ / m_{g})}{−\ln(1 − Δm\%/100)}
+\end{equation}
+\begin{equation}
+\label{eqn_ladp}
+λt = \min(λ × t/7, λt_{max})
+\end{equation}
+\begin{equation}
+\label{eqn_bmra}
+BMR_{adp}(t) = BMR × (1 − λt)
+\end{equation}
+\begin{equation}
+\label{eqn_amta}
+A_{adp} = A × (1 − λt)
+\end{equation}
+\begin{equation}
+\label{eqn_bata}
+B_{adp} = \frac{10×(1 − λt) + (MET × τ × κ / ε)}{1 − f} \quad \text{under Mifflin}
+\end{equation}
+\begin{equation}
+\label{eqn_batk}
+B_{adp} = \frac{21.6×c_{m}×(1 − λt) + (MET × τ × κ / ε)}{1 − f} \quad \text{under Katch}
+\end{equation}
+\begin{equation}
+\label{eqn_mplt}
+m∞_{adp} = \frac{E_{in} − A_{adp}}{B_{adp}}
+\end{equation}
+
+\subsection{Glycogen and Water Storage}
+
+Skeletal muscle stores glycogen at a density g\_musc of roughly 13–15 g per kg of wet muscle mass, and each gram of stored glycogen binds a further r ≈ 3–4 g of water — figures drawn from classic glycogen-depletion and -repletion studies \cite{ref_olsson1970}. The muscle-tissue mass that actually holds glycogen is estimated from the skeletal-muscle share s of lean mass, as given in eqn.~\eqref{eqn_mmus}; the resulting glycogen store, from that muscle mass at density g\_musc plus a roughly constant liver reserve g\_liver (≈ 100 g), is given in eqn.~\eqref{eqn_mgly}; and the associated bound-water swing, scaled by r — the day-to-day scale movement glycogen and water can account for on their own, distinct from real fat-mass change — is given in eqn.~\eqref{eqn_dmgl}.
+
+\begin{equation}
+\label{eqn_mmus}
+m_{musc} = s × LBM
+\end{equation}
+\begin{equation}
+\label{eqn_mgly}
+m_{gly} = g_{musc} × m_{musc} + g_{liver}
+\end{equation}
+\begin{equation}
+\label{eqn_dmgl}
+ΔM_{gly} = \frac{m_{gly} × (1 + r)}{1000}
+\end{equation}
+
+\subsection{Dietary Requirements}
+
+The remaining four bands — protein, dietary fiber, fat, and carbohydrate — set healthy daily ranges for diet composition rather than for the size of the energy deficit itself, each scaled to lean mass or to intake, in the four subsections below.
+
+\subsubsection{Protein Requirements}
+
+Protein needs for energy-restricted, resistance-trained individuals with low body fat are estimated at a floor p\_min and ceiling p\_max of 2.3–3.1 g per kg of fat-free (lean) mass per day, scaled upward with the severity of caloric restriction and leanness \cite{ref_helms2014}. The corresponding lower and upper healthy daily protein amounts, P\_min and P\_max, are given in eqn.~\eqref{eqn_pmin} and eqn.~\eqref{eqn_pmax}.
+
+\begin{equation}
+\label{eqn_pmin}
+P_{min} = p_{min} × LBM
+\end{equation}
+\begin{equation}
+\label{eqn_pmax}
+P_{max} = p_{max} × LBM
+\end{equation}
+
+\subsubsection{Dietary Fiber Requirements}
+
+Dietary fiber intake is recommended relative to energy intake via a floor coefficient b\_min of roughly 14 g per 1,000 kcal consumed, while a practical upper ceiling b\_max is instead scaled to body weight, per the USDA Dietary Guidelines for Americans \cite{ref_usda2020}. These two different bases give the lower and upper healthy daily dietary fiber amounts, F\_min and F\_max, in eqn.~\eqref{eqn_fmin} and eqn.~\eqref{eqn_fmax} respectively.
+
+\begin{equation}
+\label{eqn_fmin}
+F_{min} = b_{min} × \frac{E_{in}}{1000}
+\end{equation}
+\begin{equation}
+\label{eqn_fmax}
+F_{max} = b_{max} × m̄
+\end{equation}
+
+\subsubsection{Fat Requirements}
+
+Fat intake is recommended within an Acceptable Macronutrient Distribution Range (AMDR) of 20–35\% of total energy intake for adults \cite{ref_iom2005}, the floor and ceiling percentages denoted k\_min and k\_max. Converted to grams at fat's fixed energy density of 9 kcal/g, this range gives the lower and upper healthy daily fat amounts, G\_min and G\_max, in eqn.~\eqref{eqn_gmin} and eqn.~\eqref{eqn_gmax}.
+
+\begin{equation}
+\label{eqn_gmin}
+G_{min} = \frac{(k_{min}/100) × E_{in}}{9}
+\end{equation}
+\begin{equation}
+\label{eqn_gmax}
+G_{max} = \frac{(k_{max}/100) × E_{in}}{9}
+\end{equation}
+
+\subsubsection{Carbohydrate Requirements}
+
+Carbohydrate intake carries the same AMDR structure, recommended at 45–65\% of total energy intake for adults \cite{ref_iom2005}, the floor and ceiling percentages denoted q\_min and q\_max. Converted to grams at carbohydrate's fixed energy density of 4 kcal/g, this range gives the lower and upper healthy daily carbohydrate amounts, C\_min and C\_max, in eqn.~\eqref{eqn_cmin} and eqn.~\eqref{eqn_cmax}.
+
+\begin{equation}
+\label{eqn_cmin}
+C_{min} = \frac{(q_{min}/100) × E_{in}}{4}
+\end{equation}
+\begin{equation}
+\label{eqn_cmax}
+C_{max} = \frac{(q_{max}/100) × E_{in}}{4}
+\end{equation}
