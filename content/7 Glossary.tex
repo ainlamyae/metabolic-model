@@ -1,5 +1,5 @@
 % A content fragment, meant to be \input{} or \include{}d from a master
-% document alongside "2 Human Metabolic System Model.tex" — same
+% document alongside "4 Human Metabolic System Model.tex" — same
 % requirements (amsmath, unicode-math + fontspec, compiled with xelatex or
 % lualatex for the raw Unicode symbols below).
 
@@ -23,15 +23,18 @@
 \subsection{Symbols and Variables}
 
 \begin{description}
-\item[$A, B$] Affine maintenance coefficients, $M(m̄) = A + B×m̄$.
+\item[$A$] Affine maintenance coefficient (intercept), $M(m̄) = A + B×m̄$.
+\item[$B$] Affine maintenance coefficient (slope), $M(m̄) = A + B×m̄$.
 \item[$a$] Age (years).
-\item[$BMI_{g}$] Body mass index at $m_{d}$ (kg/m$^2$).
+\item[$BMI_{des}$] Body mass index at $m_{des}$ (kg/m$^2$).
 \item[$BMR$] Resting metabolic rate (kcal/day).
 \item[$b$] Dietary fiber coefficient (g per 1{,}000 kcal; g/kg).
 \item[$C$] Daily carbohydrate (g/day).
-\item[$c_{m}, c_{h}, c_{0}$] Boer lean-body-mass coefficients.
+\item[$c_{m}$] Boer lean-body-mass mass coefficient.
+\item[$c_{h}$] Boer lean-body-mass height coefficient.
+\item[$c_{0}$] Boer lean-body-mass constant term.
 \item[$D$] Daily energy deficit (kcal/day).
-\item[$E_{a}$] Daily activity burn (kcal/day).
+\item[$E_{act}$] Daily activity burn (kcal/day).
 \item[$E_{in}$] Daily energy intake (kcal/day).
 \item[$F$] Daily dietary fiber (g/day).
 \item[$f$] Thermic effect of food as a fraction of $E_{in}$.
@@ -43,7 +46,7 @@
 \item[$LBM$] Lean body mass (kg).
 \item[$m$] Body mass (kg).
 \item[$m̄$] 7-day rolling average body mass (kg).
-\item[$m_{d}$] Healthy body mass (kg).
+\item[$m_{des}$] Healthy body mass (kg).
 \item[$m_{gly}$] Stored glycogen mass (g).
 \item[$m_{musc}$] Skeletal muscle mass (kg).
 \item[$m∞$] Equilibrium body mass (kg).
@@ -53,7 +56,7 @@
 \item[$q$] Carbohydrate share of $E_{in}$ (\%).
 \item[$r$] Water bound per gram of glycogen (g/g).
 \item[$s$] Sleep duration (h); skeletal-muscle fraction of $LBM$ in glycogen storage.
-\item[$s_{d}$] Desire sleep duration (h).
+\item[$s_{des}$] Desire sleep duration (h).
 \item[$t$] Elapsed time (days).
 \item[$Δm$] Weekly fat-mass change (kg/week).
 \item[$Δm\%$] Weekly fat-mass change relative to $m̄$ (\%).
@@ -73,16 +76,16 @@
 \subsection{Subscripts and Indices}
 
 \begin{description}
-\item[$a$] Activity.
+\item[$act$] Activity.
 \item[$adp$] Metabolic-adaptation adjusted.
-\item[$d$] Desire.
-\item[$g$] Healthy reference value.
+\item[$des$] Desire, healthy reference value.
 \item[$gly$] Glycogen.
 \item[$h$] Height term.
 \item[$in$] Intake.
 \item[$liver$] Liver.
 \item[$m$] Body-mass term.
-\item[$min, max$] Lower and upper bound.
+\item[$min$] Lower bound.
+\item[$max$] Upper bound.
 \item[$musc$] Skeletal muscle.
 \item[$0$] Constant term.
 \end{description}

@@ -1,4 +1,4 @@
-<h2 id="sec-2">Interactive Calculation Sheet</h2>
+<h2 id="appendix-interactive-calculation-sheet" class="appendix-heading">Interactive Calculation Sheet</h2>
 
 <fieldset class="formula-solve-for">
     <legend>Solve for</legend>
@@ -52,13 +52,13 @@
         <span class="formula-unit"></span>
     </label>
     <label class="formula-row">
-        <span class="formula-sym">m_d</span>
+        <span class="formula-sym">m_des</span>
         <span class="formula-name">healthy body mass</span>
         <input type="text" id="formula-target" inputmode="decimal">
         <span class="formula-unit">kg</span>
     </label>
-    <label class="formula-row" title="The BMI your target body mass comes to at your height — BMI = m_d / (h/100)². Type a target mass and this follows it; type a BMI here and the target mass follows instead. The healthy band is 18.5–24.9, and outside it the box goes red. In Solve for → Target body mass both are answers, so neither is typed.">
-        <span class="formula-sym">BMI_g</span>
+    <label class="formula-row" title="The BMI your target body mass comes to at your height — BMI = m_des / (h/100)². Type a target mass and this follows it; type a BMI here and the target mass follows instead. The healthy band is 18.5–24.9, and outside it the box goes red. In Solve for → Target body mass both are answers, so neither is typed.">
+        <span class="formula-sym">BMI_des</span>
         <span class="formula-name">healthy body mass index</span>
         <input type="text" id="formula-target-bmi" inputmode="decimal">
         <span class="formula-unit">kg/m²</span>
@@ -107,13 +107,13 @@
         <span class="formula-fixed">200</span>
         <span class="formula-unit">mL O₂/kcal</span>
     </div>
-    <label class="formula-row" title="Activity burn at that target: Eₐ = MET × m̄ × τ × κ / ε. Not editable: it is derived from MET, τ and κ above.">
-        <span class="formula-sym">Eₐ</span>
+    <label class="formula-row" title="Activity burn at that target: E_act = MET × m̄ × τ × κ / ε. Not editable: it is derived from MET, τ and κ above.">
+        <span class="formula-sym">E_act</span>
         <span class="formula-name">daily desired activity burn</span>
         <input type="text" id="formula-activity-kcal" inputmode="decimal" readonly>
         <span class="formula-unit">kcal/day</span>
     </label>
-    <!-- Marks the end of the activity block (MET, τ, κ, Eₐ) before the sleep block
+    <!-- Marks the end of the activity block (MET, τ, κ, E_act) before the sleep block
          starts below. -->
     <hr class="formula-divider">
     <!-- The sleep length the PLAN assumes, not a log of what actually happened.
@@ -158,47 +158,47 @@
         <span class="formula-fixed">7700</span>
         <span class="formula-unit">kcal/kg</span>
     </div>
-    <label class="formula-row" title="The daily energy shortfall your weekly fat-loss target implies: D = Δm × ρ / 7. This is what comes off maintenance to give the target intake — not calories burned by activity, which is Eₐ.">
+    <label class="formula-row" title="The daily energy shortfall your weekly fat-loss target implies: D = Δm × ρ / 7. This is what comes off maintenance to give the target intake — not calories burned by activity, which is E_act.">
         <span class="formula-sym">D</span>
         <span class="formula-name">daily energy deficit</span>
         <input type="text" id="formula-deficit" inputmode="decimal" readonly>
         <span class="formula-unit">kcal/day</span>
     </label>
     <!-- Marks the end of the rate block (Δm%, Δm, ρ, D) before the calorie-solve
-         block (f, TEF, M, Eᵢₙ) starts below. -->
+         block (f, TEF, M, E_in) starts below. -->
     <hr class="formula-divider">
     <label class="formula-row" title="The thermic effect of food: the share of what you eat that is spent digesting it — about 10% on a mixed diet, higher on protein. It is part of expenditure, so counting it RAISES the intake that produces the same deficit. Left at 0 by default; type 10 to include it.">
         <span class="formula-sym">f</span>
-        <span class="formula-name">thermic effect of food, as a share of Eᵢₙ</span>
+        <span class="formula-name">thermic effect of food, as a share of E_in</span>
         <input type="text" id="formula-tef-pct" inputmode="decimal">
-        <span class="formula-unit">% of Eᵢₙ</span>
+        <span class="formula-unit">% of E_in</span>
     </label>
-    <label class="formula-row" title="What that share comes to in calories: TEF = f × Eᵢₙ. Zero while f is zero.">
+    <label class="formula-row" title="What that share comes to in calories: TEF = f × E_in. Zero while f is zero.">
         <span class="formula-sym">TEF</span>
         <span class="formula-name">energy spent digesting that intake</span>
         <input type="text" id="formula-tef" inputmode="decimal" readonly>
         <span class="formula-unit">kcal/day</span>
     </label>
-    <!-- Marks the end of the TEF pair (f, TEF) before M and Eᵢₙ start below. -->
+    <!-- Marks the end of the TEF pair (f, TEF) before M and E_in start below. -->
     <hr class="formula-divider">
-    <label class="formula-row" title="Maintenance: BMR + the activity burn Eₐ that hitting τ minutes at MET produces. The intake that would hold your body mass still — the deficit D is measured down from this, and Eᵢₙ is what's left.">
+    <label class="formula-row" title="Maintenance: BMR + the activity burn E_act that hitting τ minutes at MET produces. The intake that would hold your body mass still — the deficit D is measured down from this, and E_in is what's left.">
         <span class="formula-sym">M</span>
-        <span class="formula-name">maintenance at m̄ — BMR + Eₐ</span>
+        <span class="formula-name">maintenance at m̄ — BMR + E_act</span>
         <input type="text" id="formula-maintenance" inputmode="decimal" readonly>
         <span class="formula-unit">kcal/day</span>
     </label>
     <label class="formula-row">
-        <span class="formula-sym">Eᵢₙ</span>
+        <span class="formula-sym">E_in</span>
         <span class="formula-name">desired daily intake</span>
         <input type="text" id="formula-ein" inputmode="decimal">
         <span class="formula-unit">kcal</span>
     </label>
-    <!-- Marks the end of the calorie-solve block, Eᵢₙ, before the journey block
+    <!-- Marks the end of the calorie-solve block, E_in, before the journey block
          (t, dates) starts below. -->
-    <hr class="formula-divider" title="TEF is already built into Eᵢₙ above — the identity is solved with f in the denominator, not summed — so it is not a further deficit to subtract on top of it.">
+    <hr class="formula-divider" title="TEF is already built into E_in above — the identity is solved with f in the denominator, not summed — so it is not a further deficit to subtract on top of it.">
     <label class="formula-row">
         <span class="formula-sym">t</span>
-        <span class="formula-name">days to m_d, holding Eᵢₙ daily</span>
+        <span class="formula-name">days to m_des, holding E_in daily</span>
         <input type="text" id="formula-days" inputmode="decimal">
         <span class="formula-unit">days</span>
     </label>
@@ -226,7 +226,7 @@
         <input type="text" id="formula-bmr-adapt" inputmode="decimal" readonly>
         <span class="formula-unit">kcal/day</span>
     </label>
-    <label class="formula-row" title="The plateau once BMR has adapted: the same m∞ = (Eᵢₙ − A)/B with the BMR half of A and B scaled by (1 − λt). It sits ABOVE the m∞ printed in the trace, and that gap is why a constant-BMR forecast tends to overshoot in practice.">
+    <label class="formula-row" title="The plateau once BMR has adapted: the same m∞ = (E_in − A)/B with the BMR half of A and B scaled by (1 − λt). It sits ABOVE the m∞ printed in the trace, and that gap is why a constant-BMR forecast tends to overshoot in practice.">
         <span class="formula-sym">m∞_adp</span>
         <span class="formula-name">adapted plateau, and the overshoot it implies</span>
         <input type="text" id="formula-plateau-adapt" inputmode="decimal" readonly>
@@ -339,7 +339,7 @@
          starts below. -->
     <hr class="formula-divider">
     <!-- The fat band follows fiber, same two-different-bases shape but both ends
-         scaled off Eᵢₙ instead of one off body weight: 20-35% of total energy from fat
+         scaled off E_in instead of one off body weight: 20-35% of total energy from fat
          is the Institute of Medicine's Acceptable Macronutrient Distribution Range for
          adults (Dietary Reference Intakes for Energy, Carbohydrate, Fiber, Fat, Fatty
          Acids, Cholesterol, Protein, and Amino Acids, 2005), also the range the USDA
@@ -351,13 +351,13 @@
         <span class="formula-sym">k_min</span>
         <span class="formula-name">fat floor, share of intake calories</span>
         <input type="text" id="formula-fat-pct-min" inputmode="decimal">
-        <span class="formula-unit">% of Eᵢₙ</span>
+        <span class="formula-unit">% of E_in</span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">k_max</span>
         <span class="formula-name">fat ceiling, share of intake calories</span>
         <input type="text" id="formula-fat-pct-max" inputmode="decimal">
-        <span class="formula-unit">% of Eᵢₙ</span>
+        <span class="formula-unit">% of E_in</span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">G_min</span>
@@ -374,7 +374,7 @@
     <!-- Marks the end of the fat block (G_min, G_max) before the carb block starts
          below. -->
     <hr class="formula-divider">
-    <!-- The carb band follows fat, same shape again — both ends a share of Eᵢₙ:
+    <!-- The carb band follows fat, same shape again — both ends a share of E_in:
          45-65% of total energy from carbohydrate is the same IOM AMDR report's range
          for carbohydrate, also carried forward by the USDA Dietary Guidelines for
          Americans. 4 kcal/g is carbohydrate's fixed energy density (Atwater), not a
@@ -383,13 +383,13 @@
         <span class="formula-sym">q_min</span>
         <span class="formula-name">carbohydrate floor, share of intake calories</span>
         <input type="text" id="formula-carb-pct-min" inputmode="decimal">
-        <span class="formula-unit">% of Eᵢₙ</span>
+        <span class="formula-unit">% of E_in</span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">q_max</span>
         <span class="formula-name">carbohydrate ceiling, share of intake calories</span>
         <input type="text" id="formula-carb-pct-max" inputmode="decimal">
-        <span class="formula-unit">% of Eᵢₙ</span>
+        <span class="formula-unit">% of E_in</span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">C_min</span>
@@ -414,7 +414,7 @@
     <div class="mtc-subplot-label">(c) Calories intake</div>
     <div id="activity-chart" class="mtc-subplot"></div>
     <div class="mtc-subplot-label">(d) Activity</div>
-    <figcaption>Fig. 2. Four linked subplots over the same projected timeline, from today through 14 days past the estimated arrival date (dashed vertical line); past arrival, mass holds at m_d and Eᵢₙ steps up to whatever intake keeps the balance in (b) at zero, so all four panels' tails show maintenance rather than more of the same deficit. (a) Projected body mass trajectory from the current 7-day rolling average (m̄) to the healthy mass (m_d), under the exponential decay model of <a href="#maintenance-and-mass-trajectory">Section 2.3</a>. The amber band denotes the glycogen- and water-attributable scale swing (ΔM_gly) straddling the curve, per <a href="#glycogen-and-water-storage">Section 2.4</a>; the teal band marks the WHO healthy body-mass-index range (18.5–24.9 kg/m²), per <a href="#healthy-human-body-mass-index">Section 2.1.3</a>. Right ordinate: body mass index, a linear rescaling of the left ordinate by height. (b) Daily <a href="#energy-balance-components">energy balance</a>, signed by physical direction: energy leaving the body — <a href="#resting-metabolic-rate">BMR</a>, <a href="#activity-burn">Eₐ</a>, their sum M, and digestion cost <a href="#thermic-effect-of-food">TEF</a> — plotted negative, and intake Eᵢₙ entering it plotted positive; D, the net balance, negative during an actual deficit and positive during a surplus, with the <a href="#sleep-deprivation-effect">sleep-deprivation</a> penalty (δ) shown positive when present. Right ordinate: grams of dietary fat, a fixed 9 kcal/g rescaling of the same left-ordinate values. (c) <a href="#desire-daily-intake">Eᵢₙ</a>, the desired daily intake held fixed through the trajectory (left ordinate, kcal/day); layered beneath it, purely comparative, the <a href="#protein-requirements">protein</a>, <a href="#dietary-fiber-requirements">dietary fiber</a>, <a href="#fat-requirements">fat</a> and <a href="#carbohydrate-requirements">carbohydrate</a> bands (bottom to top), each a solid floor at its minimum under a lighter ceiling at its maximum — no gram axis, since the stack sums four different substances a single scale couldn't read accurately for any one of them. (d) Activity calories burned, negative as energy leaving the body (left ordinate), against the fixed activity duration τ (right ordinate, a duration rather than an energy flow, so left positive; dashed).</figcaption>
+    <figcaption>Fig. 2. Four linked subplots over the same projected timeline, from today through 14 days past the estimated arrival date (dashed vertical line); past arrival, mass holds at m_des and E_in steps up to whatever intake keeps the balance in (b) at zero, so all four panels' tails show maintenance rather than more of the same deficit. (a) Projected body mass trajectory from the current 7-day rolling average (m̄) to the healthy mass (m_des), under the exponential decay model of <a href="#maintenance-and-mass-trajectory">Section 2.3</a>. The amber band denotes the glycogen- and water-attributable scale swing (ΔM_gly) straddling the curve, per <a href="#glycogen-and-water-storage">Section 2.4</a>; the teal band marks the WHO healthy body-mass-index range (18.5–24.9 kg/m²), per <a href="#healthy-human-body-mass-index">Section 2.1.3</a>. Right ordinate: body mass index, a linear rescaling of the left ordinate by height. (b) Daily <a href="#energy-balance-components">energy balance</a>, signed by physical direction: energy leaving the body — <a href="#resting-metabolic-rate">BMR</a>, <a href="#activity-burn">E_act</a>, their sum M, and digestion cost <a href="#thermic-effect-of-food">TEF</a> — plotted negative, and intake E_in entering it plotted positive; D, the net balance, negative during an actual deficit and positive during a surplus, with the <a href="#sleep-deprivation-effect">sleep-deprivation</a> penalty (δ) shown positive when present. Right ordinate: grams of dietary fat, a fixed 9 kcal/g rescaling of the same left-ordinate values. (c) <a href="#desire-daily-intake">E_in</a>, the desired daily intake held fixed through the trajectory (left ordinate, kcal/day); layered beneath it, purely comparative, the <a href="#protein-requirements">protein</a>, <a href="#dietary-fiber-requirements">dietary fiber</a>, <a href="#fat-requirements">fat</a> and <a href="#carbohydrate-requirements">carbohydrate</a> bands (bottom to top), each a solid floor at its minimum under a lighter ceiling at its maximum — no gram axis, since the stack sums four different substances a single scale couldn't read accurately for any one of them. (d) Activity calories burned, negative as energy leaving the body (left ordinate), against the fixed activity duration τ (right ordinate, a duration rather than an energy flow, so left positive; dashed).</figcaption>
 </figure>
 
 <div id="formula-substituted" class="formula-substituted"></div>

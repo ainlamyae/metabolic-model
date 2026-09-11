@@ -166,7 +166,7 @@ main section {
    text — reordering, nesting, or inserting a section renumbers everything
    after it automatically, with no manual "1.10 -> 1.11" edits anywhere. */
 .sheet {
-    counter-reset: h2num;
+    counter-reset: h2num appendixnum;
 }
 
 h2 {
@@ -180,6 +180,27 @@ h2 {
 
 h2::before {
     content: counter(h2num) ". ";
+}
+
+/* The Abstract precedes the Introduction and is conventionally unnumbered;
+   it must not consume a counter value that would otherwise push every
+   later section's number up by one. */
+h2#abstract {
+    counter-increment: none;
+}
+
+h2#abstract::before {
+    content: "";
+}
+
+/* Appendices use IEEE-style letters (Appendix A, B, C...) on their own
+   counter, rather than continuing the numbered-section count. */
+h2.appendix-heading {
+    counter-increment: appendixnum;
+}
+
+h2.appendix-heading::before {
+    content: "Appendix " counter(appendixnum, upper-alpha) ". ";
 }
 
 h3 {
@@ -212,7 +233,7 @@ h4::before {
    it sits before the numbered headings in DOM order and can't read their
    counter values directly; its nesting must mirror the heading structure. */
 .toc {
-    counter-reset: toc-h2;
+    counter-reset: toc-h2 toc-appendixnum;
 }
 
 /* Contents sidebar: fixed on the left on wide screens; a drawer opened
@@ -326,6 +347,26 @@ h4::before {
 
 .toc > ul > li > a::before {
     content: counter(toc-h2) ". ";
+}
+
+/* Mirrors the h2#abstract exemption above: the Abstract's toc entry must
+   not consume a toc-h2 value either, so the two counters stay in sync. */
+.toc > ul > li.toc-unnumbered {
+    counter-increment: none;
+}
+
+.toc > ul > li.toc-unnumbered > a::before {
+    content: "";
+}
+
+/* Mirrors the h2.appendix-heading lettering above, so the toc entry reads
+   "Appendix A." etc. instead of continuing the numbered-section count. */
+.toc > ul > li.toc-appendix {
+    counter-increment: toc-appendixnum;
+}
+
+.toc > ul > li.toc-appendix > a::before {
+    content: "Appendix " counter(toc-appendixnum, upper-alpha) ". ";
 }
 
 .toc > ul > li > ul > li {
@@ -838,7 +879,7 @@ ul.limits li b {
 /* The one row whose input is the current answer rather than a knob to turn:
    readonly like ρ/ε, but still accent-coloured so it keeps reading as "the
    answer" among its siblings. .formula-field-computed gets the same look for
-   Eᵢₙ/t/date in TAU and DELTA_M — there the "answer" field stays genuinely
+   E_in/t/date in TAU and DELTA_M — there the "answer" field stays genuinely
    editable, so it can't rely on :read-only alone. */
 .formula-row input:read-only,
 .formula-row input.formula-field-computed {
@@ -848,7 +889,7 @@ ul.limits li b {
     font-weight: 600;
 }
 
-/* Δm% above the 1%/week ceiling, and BMI_g outside the healthy 18.5–24.9
+/* Δm% above the 1%/week ceiling, and BMI_des outside the healthy 18.5–24.9
    band. The colour is the whole warning — the words are in the substituted
    trace below. Must sit after the read-only block above: same specificity,
    so source order is what lets a flagged figure stay red in a Solve-for
