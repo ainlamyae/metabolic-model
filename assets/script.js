@@ -1125,10 +1125,10 @@ function renderWeeklyLossPctField() {
 
 function formulaBmrRow(bmr, { bodyMassKg, heightCm, age, sex, formula }) {
   if (formula === 'katch') {
-    return ['BMR', `370 + 21.6 × ${bmrLeanBodyMassKg(bodyMassKg, heightCm, sex)}  =  ${Math.round(bmr)} kcal/day — Katch-McArdle, from lean mass`];
+    return ['REE', `370 + 21.6 × ${bmrLeanBodyMassKg(bodyMassKg, heightCm, sex)}  =  ${Math.round(bmr)} kcal/day — Katch-McArdle, from lean mass`];
   }
   const sigma = sex === 'male' ? '+ 5' : '− 161';
-  return ['BMR', `10 × ${bodyMassKg} + 6.25 × ${heightCm} − 5 × ${age} ${sigma}  =  ${Math.round(bmr)} kcal/day`];
+  return ['REE', `10 × ${bodyMassKg} + 6.25 × ${heightCm} − 5 × ${age} ${sigma}  =  ${Math.round(bmr)} kcal/day`];
 }
 
 function formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }) {
@@ -1268,7 +1268,7 @@ function renderCorrectionFields(plan) {
   const adaptedBmr = bmr * (1 - fraction);
   const lostPct = Math.round(fraction * 1000) / 10;
   setComputedField(bmrEl, String(Math.round(adaptedBmr)));
-  rows.push(['BMR_adp', `${Math.round(bmr)} × (1 − ${lostPct}/100)  =  ${Math.round(adaptedBmr)} kcal/day — ${atCap ? `at the ${pctCap}% ceiling` : `by day ${Math.round(days)}`}`]);
+  rows.push(['REE_adp', `${Math.round(bmr)} × (1 − ${lostPct}/100)  =  ${Math.round(adaptedBmr)} kcal/day — ${atCap ? `at the ${pctCap}% ceiling` : `by day ${Math.round(days)}`}`]);
 
   if (journey === 'pct') {
     setComputedField(plateauEl, '—');
@@ -2000,9 +2000,9 @@ function renderBalanceChart() {
 
   const legendItems = [
     { key: 'deficit', color: 'var(--danger)', label: 'D (daily energy deficit)' },
-    { key: 'maintenance', color: 'var(--ink-soft)', label: 'M (maintenance at m̄ — BMR + E_act)', dashed: true },
-    { key: 'bmr', color: '#7c3aed', label: 'BMR (resting metabolic rate, at m̄)', dashed: true },
-    { key: 'activity', color: '#0891b2', label: 'E_act (daily desired activity burn)', dashed: true },
+    { key: 'maintenance', color: 'var(--ink-soft)', label: 'M (maintenance at m̄ — REE + AEE)', dashed: true },
+    { key: 'bmr', color: '#7c3aed', label: 'REE (resting energy expenditure, at m̄)', dashed: true },
+    { key: 'activity', color: '#0891b2', label: 'AEE (daily desired activity energy expenditure)', dashed: true },
     { key: 'intake', color: 'var(--accent)', label: 'E_in (desired daily intake)' },
     { key: 'tef', color: 'var(--amber)', label: 'TEF (energy spent digesting that intake)' },
   ];
@@ -2029,9 +2029,9 @@ function renderBalanceChart() {
       const lines = [
         dayDateLabel(t),
         `D (daily energy deficit) ${Math.round(-deficit)} kcal/day`,
-        `M (maintenance at m̄ — BMR + E_act) ${Math.round(-maintenance)} kcal/day`,
-        `BMR (resting metabolic rate, at m̄) ${Math.round(-bmr)} kcal/day`,
-        `E_act (daily desired activity burn) ${Math.round(-activityKcal)} kcal/day`,
+        `M (maintenance at m̄ — REE + AEE) ${Math.round(-maintenance)} kcal/day`,
+        `REE (resting energy expenditure, at m̄) ${Math.round(-bmr)} kcal/day`,
+        `AEE (daily desired activity energy expenditure) ${Math.round(-activityKcal)} kcal/day`,
         `E_in (desired daily intake) ${Math.round(einAtT)} kcal/day`,
         `TEF (energy spent digesting that intake) ${Math.round(-einAtT * (1 - divisor))} kcal/day`,
       ];
@@ -2224,7 +2224,7 @@ function renderActivityChart() {
   svgParts.push(subplotHoverSvgParts('var(--accent)'), '</svg>', '<div class="mtc-tooltip" hidden></div>');
 
   const legendItems = [
-    { key: 'kcal', color: 'var(--accent)', label: 'E_act (daily desired activity burn)' },
+    { key: 'kcal', color: 'var(--accent)', label: 'AEE (daily desired activity energy expenditure)' },
     { key: 'minutes', color: 'var(--amber)', label: 'τ (Activity time)', dashed: true },
   ];
   svgParts.push(`<div class="mtc-legend">${legendItems.map((item) => `<button type="button" class="mtc-legend-item${activityLayerVisible[item.key] ? '' : ' mtc-legend-item-off'}" data-layer="${item.key}">${legendLineMark(item.color, item.dashed)}${item.label}</button>`).join('')}</div>`);
@@ -2242,7 +2242,7 @@ function renderActivityChart() {
     sample: (t) => {
       const mass = massTrajectoryAtDay(inputs, t);
       const kcal = -coefficients.activityPerKg * mass;
-      const lines = [dayDateLabel(t), `E_act (daily desired activity burn) ${Math.round(kcal)} kcal/day`, `τ (Activity time) ${Math.round(tau)} min/day`];
+      const lines = [dayDateLabel(t), `AEE (daily desired activity energy expenditure) ${Math.round(kcal)} kcal/day`, `τ (Activity time) ${Math.round(tau)} min/day`];
       if (t > tTotal) lines.push('(maintenance tail, past arrival)');
       return { y: yAt(kcal), text: lines.join('\n') };
     },
@@ -2306,7 +2306,7 @@ function renderFormulaPreviewCore() {
     const eqRounded = Math.round(((detail.kcal - a) / b) * 10) / 10;
     const rows = [
       bmrRow,
-      ['E_act', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(detail.activityKcal)} kcal/day`],
+      ['AEE', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(detail.activityKcal)} kcal/day`],
       ...renderSleepDeprivationField(detail),
       ...renderWeeklyLossPctField(),
       ['D', formulaDeficitTraceLine(detail)],
@@ -2402,7 +2402,7 @@ function renderFormulaPreviewCore() {
     }
     rows.push(
       bmrRow,
-      ['E_act', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
+      ['AEE', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
       ...renderSleepDeprivationField(sleepInfo),
       ...renderWeeklyLossPctField(),
       ['D', formulaDeficitTraceLine(sleepInfo)],
@@ -2510,7 +2510,7 @@ function renderFormulaPreviewCore() {
 
     renderFormulaSubstituted([
       bmrRow,
-      ['E_act', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
+      ['AEE', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
       ...formulaDeficitRows(coefficients, { bmr, activityKcal, einKcal: einForDisplay, deficit }),
       ...renderTefField(),
       ['Δm', `${Math.round(deficit)} × 7 / 7700  =  ${deltaMSolved} kg/week`],
@@ -2544,7 +2544,7 @@ function renderFormulaPreviewCore() {
     ['E_in', `${Math.round(a)} + ${bRounded} × ${eqRounded}  =  ${Math.round(einForDisplay)} kcal/day`],
     ...renderTefField(),
     bmrRow,
-    ['E_act', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
+    ['AEE', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
     ...formulaDeficitRows(coefficients, { bmr, activityKcal, einKcal: einForDisplay, deficit }),
     ['Δm', `${Math.round(deficit)} × 7 / 7700  =  ${deltaMSolved} kg/week`],
     ...renderTargetBmiField(),
@@ -2646,11 +2646,6 @@ function wireSheet() {
       applySolveForMode(currentSolveFor());
       renderFormulaPreview();
     });
-  });
-
-  document.getElementById('formula-reset-btn').addEventListener('click', () => {
-    loadDefaultInputs();
-    renderFormulaPreview();
   });
 }
 
@@ -2978,7 +2973,7 @@ async function loadSheet() {
     fetch('content/7 Glossary.tex', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/8 References.bib', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/9 Appendix Interactive Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/10 Appendix Activity Burn Calorie Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/10 Appendix Activity Energy Expenditure Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/11 Appendix Intake Calorie Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
   ]);
 
@@ -3008,9 +3003,204 @@ async function loadSheet() {
   sheetRoot.insertAdjacentHTML('beforeend', intakeSheetHtml);
 }
 
+// ---------------------------------------------------------------------------
+// Appendix: Activity Energy Expenditure Calculation Sheet. Each row's Calories is
+// the same E_act = MET × m̄ × τ × κ / ε identity Appendix 9 uses for its
+// desired-activity target (κ from formula-met-o2, ε the fixed
+// ML_O2_PER_KCAL) — only τ, the active duration, is new here, read off each
+// row's own Amount rather than typed once. Duration-per-unit mirrors the
+// ledger app's activity-estimator.js: reps/holds at 3 sec/rep
+// (WORKOUT_REP_SEC_DEFAULT there), steps at 100 step/min
+// (WORKOUT_STEPS_PER_MIN_DEFAULT there), minutes taken as given.
+const ACTIVITY_BURN_REP_SEC = 3;
+const ACTIVITY_BURN_STEPS_PER_MIN = 100;
+
+function formatActivityBurnMinutes(minutes) {
+  return `${minutes.toFixed(1).replace(/\.0$/, '')} min`;
+}
+
+// The Amount column is one box, typed as a bare number ("30") or a sets*reps
+// pair ("3*10"), with data-unit saying which of the four shapes it is
+// (reps, hold, steps, minutes) — the plain-English unit ("Sets x Reps", "Min", …)
+// sits to its right as static text rather than living inside the value.
+function parseActivityBurnAmount(text) {
+  const t = String(text || '').trim();
+  const pair = /^(\d+(?:\.\d+)?)\s*\*\s*(\d+(?:\.\d+)?)$/.exec(t);
+  if (pair) return { a: Number(pair[1]), b: Number(pair[2]) };
+  const single = /^(\d+(?:\.\d+)?)$/.exec(t);
+  if (single) return { a: Number(single[1]) };
+  return {};
+}
+
+function activityBurnMinutesForRow(row) {
+  const input = row.querySelector('.activity-burn-amount');
+  if (!input) return 0;
+  const { a, b } = parseActivityBurnAmount(input.value);
+  if (a === undefined) return 0;
+
+  switch (input.dataset.unit) {
+    case 'minutes': return a;
+    case 'steps': return a / ACTIVITY_BURN_STEPS_PER_MIN;
+    case 'hold': return (a * (b || 0)) / 60;
+    case 'reps': return (a * (b || 0) * ACTIVITY_BURN_REP_SEC) / 60;
+    default: return 0;
+  }
+}
+
+// Click-to-sort headers, same th.sortable/data-sort convention as the ledger
+// app's sortable tables (ui-helpers.js's makeSortableHeaders) — reimplemented
+// locally since this table's rows are static markup, not data re-rendered
+// from a fetched array.
+const activityBurnSortState = { key: null, dir: 1 };
+
+function activityBurnSortValue(row, key) {
+  if (key === 'type') return row.querySelector('.activity-burn-type').textContent.trim().toLowerCase();
+  if (key === 'name') return row.querySelector('.activity-burn-name').textContent.trim().toLowerCase();
+  if (key === 'amount') {
+    const input = row.querySelector('.activity-burn-amount');
+    const { a, b } = parseActivityBurnAmount(input ? input.value : '');
+    return b ?? a ?? 0;
+  }
+
+  const box = row.querySelector('.activity-burn-check');
+  if (key === 'time') return activityBurnMinutesForRow(row);
+  if (key === 'met') return Number(box.dataset.met);
+  if (key === 'kcal') {
+    const bodyMassKg = formulaNumber('formula-body-mass-smooth') ?? DEFAULT_BODY_MASS_KG;
+    const kappa = formulaNumber('formula-met-o2') ?? MET_ML_O2_PER_KG_MIN_DEFAULT;
+    return Number(box.dataset.met) * bodyMassKg * activityBurnMinutesForRow(row) * (kappa / ML_O2_PER_KCAL);
+  }
+  return '';
+}
+
+// Re-orders the rows by whatever activityBurnSortState currently holds,
+// without touching that state — the toggle-on-click logic lives in
+// sortActivityBurnTable below; this half also runs the initial biggest-
+// Calories-first sort on load, which isn't a click and has no toggle to do.
+function applyActivityBurnSort() {
+  const table = document.getElementById('activity-burn-table');
+  if (!table || !activityBurnSortState.key) return;
+  const tbody = table.tBodies[0];
+  const rows = [...tbody.querySelectorAll('tr')];
+  const key = activityBurnSortState.key;
+
+  rows.sort((a, b) => {
+    const va = activityBurnSortValue(a, key);
+    const vb = activityBurnSortValue(b, key);
+    return typeof va === 'number' && typeof vb === 'number'
+      ? (va - vb) * activityBurnSortState.dir
+      : String(va).localeCompare(String(vb)) * activityBurnSortState.dir;
+  });
+
+  rows.forEach((row) => tbody.appendChild(row));
+
+  table.querySelectorAll('th.sortable').forEach((th) => {
+    const indicator = th.querySelector('.sort-indicator');
+    if (!indicator) return;
+    indicator.textContent = th.dataset.sort === key ? (activityBurnSortState.dir === 1 ? ' ▲' : ' ▼') : '';
+  });
+}
+
+function sortActivityBurnTable(key) {
+  if (activityBurnSortState.key === key) {
+    activityBurnSortState.dir *= -1;
+  } else {
+    activityBurnSortState.key = key;
+    activityBurnSortState.dir = 1;
+  }
+  applyActivityBurnSort();
+}
+
+function initActivityBurnSortableHeaders() {
+  const table = document.getElementById('activity-burn-table');
+  if (!table) return;
+
+  table.querySelectorAll('th.sortable').forEach((th) => {
+    const label = document.createElement('span');
+    label.textContent = th.textContent;
+    const indicator = document.createElement('span');
+    indicator.className = 'sort-indicator';
+    th.textContent = '';
+    th.append(label, indicator);
+    th.setAttribute('tabindex', '0');
+
+    th.addEventListener('click', () => sortActivityBurnTable(th.dataset.sort));
+    th.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        th.click();
+      }
+    });
+  });
+}
+
+function renderActivityBurnTable() {
+  const table = document.getElementById('activity-burn-table');
+  if (!table) return;
+
+  const bodyMassKg = formulaNumber('formula-body-mass-smooth') ?? DEFAULT_BODY_MASS_KG;
+  const kappa = formulaNumber('formula-met-o2') ?? MET_ML_O2_PER_KG_MIN_DEFAULT;
+  const kcalPerMetKgMinLive = kappa / ML_O2_PER_KCAL;
+
+  let selectedMinutes = 0;
+  let selectedKcal = 0;
+
+  table.querySelectorAll('.activity-burn-check').forEach((box) => {
+    const row = box.closest('tr');
+    const met = Number(box.dataset.met);
+    const minutes = activityBurnMinutesForRow(row);
+    const kcal = met * bodyMassKg * minutes * kcalPerMetKgMinLive;
+
+    const timeCell = row.querySelector('.activity-burn-time');
+    if (timeCell) timeCell.textContent = formatActivityBurnMinutes(minutes);
+    const kcalCell = row.querySelector('.activity-burn-kcal');
+    if (kcalCell) kcalCell.textContent = Math.round(kcal).toLocaleString();
+
+    if (box.checked) {
+      selectedMinutes += minutes;
+      selectedKcal += kcal;
+    }
+  });
+
+  const timeTotal = table.querySelector('.activity-burn-time-total');
+  if (timeTotal) timeTotal.textContent = `${Math.round(selectedMinutes)} min`;
+  const kcalTotal = table.querySelector('.activity-burn-kcal-total');
+  if (kcalTotal) kcalTotal.textContent = `${Math.round(selectedKcal).toLocaleString()} kcal`;
+}
+
+function initActivityBurnSheet() {
+  const table = document.getElementById('activity-burn-table');
+  if (!table) return;
+
+  table.querySelectorAll('.activity-burn-check').forEach((box) => {
+    box.addEventListener('change', renderActivityBurnTable);
+  });
+  // Typing a new Amount re-derives that row's Time and Calories immediately —
+  // that box is the only source of a row's quantity now.
+  table.querySelectorAll('.activity-burn-amount').forEach((input) => {
+    input.addEventListener('input', renderActivityBurnTable);
+  });
+  // Recompute every row's Calories when the body mass or oxygen-uptake
+  // inputs it depends on change up in Appendix 9, same as that sheet's own
+  // fields do for each other.
+  ['formula-body-mass-smooth', 'formula-met-o2'].forEach((id) => {
+    document.getElementById(id).addEventListener('input', renderActivityBurnTable);
+  });
+
+  initActivityBurnSortableHeaders();
+
+  renderActivityBurnTable();
+
+  // Default view: biggest Calories first.
+  activityBurnSortState.key = 'kcal';
+  activityBurnSortState.dir = -1;
+  applyActivityBurnSort();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSheet();
   wireSheet();
   initSheet();
+  initActivityBurnSheet();
   document.getElementById('footer-year').textContent = new Date().getFullYear();
 });

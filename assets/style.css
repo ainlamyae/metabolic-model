@@ -733,6 +733,70 @@ ul.limits li b {
     margin-top: 1.25rem;
 }
 
+/* Activity Energy Expenditure Calculation Sheet */
+.table-activity-burn {
+    width: auto;
+    font-size: 13px;
+}
+
+.table-activity-burn th,
+.table-activity-burn td {
+    padding: 2px 8px;
+    border-bottom: none;
+    line-height: 1.2;
+}
+
+/* Same 8.45rem the .formula-row grid column gives Appendix 9's own fields
+   (see grid-template-columns below) — width:100% off that shared rule
+   collapses here since a plain table cell, unlike a grid column, has no
+   fixed track to fill. */
+.table-activity-burn .activity-burn-amount {
+    width: 8.45rem;
+}
+
+.table-activity-burn td input[type="checkbox"] {
+    display: block;
+    margin: 0;
+}
+
+.activity-burn-check-col {
+    width: 2em;
+}
+
+.table-activity-burn th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.table-activity-burn th.sortable:hover {
+    color: var(--accent);
+}
+
+.table-activity-burn th.sortable:focus-visible {
+    outline-offset: -1px;
+    border-radius: 4px;
+}
+
+.table-activity-burn .sort-indicator {
+    font-size: .75em;
+}
+
+.activity-burn-time,
+.activity-burn-kcal {
+    font-variant-numeric: tabular-nums;
+}
+
+.activity-burn-total-row td {
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 600;
+    border-bottom: none;
+}
+
+.activity-burn-total-row td:first-child {
+    text-align: right;
+}
+
 .formula-expression {
     margin: 0 0 1.25rem;
     color: var(--ink);
@@ -917,7 +981,7 @@ ul.limits li b {
 /* One variable per line: symbol, what it is, its box, its unit. */
 .formula-row {
     display: grid;
-    grid-template-columns: 2.5rem minmax(0, 1fr) 8.45rem minmax(0, 1fr);
+    grid-template-columns: 3rem minmax(0, 1fr) 8.45rem minmax(0, 1fr);
     align-items: center;
     gap: .6rem;
     padding: .18rem 0;
@@ -944,7 +1008,8 @@ ul.limits li b {
 }
 
 .formula-row input,
-.formula-row select {
+.formula-row select,
+.activity-burn-amount {
     width: 100%;
     min-width: 0;
     font: inherit;
@@ -958,7 +1023,8 @@ ul.limits li b {
 }
 
 .formula-row input:focus,
-.formula-row select:focus {
+.formula-row select:focus,
+.activity-burn-amount:focus {
     outline: none;
     border-color: var(--accent);
 }
@@ -989,7 +1055,7 @@ ul.limits li b {
     }
 
     .formula-row {
-        grid-template-columns: 1.92rem minmax(0, 1.75fr) 8.1rem minmax(0, 1fr);
+        grid-template-columns: 2.3rem minmax(0, 1.75fr) 8.1rem minmax(0, 1fr);
         gap: .3rem;
         font-size: .7rem;
     }

@@ -1,6 +1,6 @@
 # Metabolic Model
 
-An interactive, first-principles model of the metabolic math behind weight management — BMR, activity burn, the thermic effect of food, sleep-deprivation effects, macro targets, and body-mass trajectory — served as a static site with a live calculation sheet.
+An interactive, first-principles model of the metabolic math behind weight management — basal metabolic rate (BMR), activity energy expenditure (AEE), the thermic effect of food, sleep-deprivation effects, macro targets, and body-mass trajectory — served as a static site with a live calculation sheet.
 
 ## Disclaimer
 
@@ -19,7 +19,7 @@ This model is provided for educational and informational purposes only and is no
 - `content/6 Glossary.tex` — acronyms, symbols and variables, subscripts and indices.
 - `content/7 References.bib` — the model's bibliography.
 - `content/8 Appendix Interactive Calculation Sheet.html` — the interactive calculator UI.
-- `content/9 Appendix Activity Burn Calorie Calculation Sheet.html` — the activity burn calorie calculation sheet.
+- `content/9 Appendix Activity Energy Expenditure Calculation Sheet.html` — the activity energy expenditure calculation sheet.
 - `content/10 Appendix Intake Calorie Calculation Sheet.html` — the intake calorie calculation sheet.
 - `assets/script.js` — page logic.
 - `assets/style.css` — page styling.
