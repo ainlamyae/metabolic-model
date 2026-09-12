@@ -19,6 +19,7 @@ Works for gaining too: a target above your current mass needs a negative Δm (a 
 - Resting metabolic rate: **Mifflin-St Jeor** (1990, from body mass/height/age/sex) or **Katch-McArdle** (1996, from lean mass alone)
 - Lean body mass: **Boer** (1984)
 - Activity burn: the ACSM metabolic equation (MET × mass × minutes × O₂ uptake / oxygen energy yield)
+- A Sleep Efficiency Factor (`η`) that shrinks fat-loss efficiency per hour of sleep below target, so a deficit built from a target rate (`D`) grows to compensate for a short night
 - Thermic effect of food, folded into the intake identity by solving rather than adding
 - Maintenance as an affine function of body mass, `M(m) = A + B×m`, under either BMR equation
 - The target trajectory as exponential decay toward an equilibrium mass, `m(t) = m∞ + (m − m∞)·e^(−B·t/ρ)` — or, under a pinned fat-loss percentage, a proportional journey with no plateau
@@ -26,6 +27,7 @@ Works for gaining too: a target above your current mass needs a negative Δm (a 
 - A daily protein band scaled to lean mass rather than total mass
 - A daily fiber band, floor scaled to intake (14 g per 1,000 kcal) and ceiling scaled to body weight (0.5 g/kg)
 - A daily fat band from the IOM's 20-35% Acceptable Macronutrient Distribution Range, both ends a share of `Eᵢₙ`
+- A daily carbohydrate band from the same IOM report's 45-65% range, both ends a share of `Eᵢₙ` too
 - A glycogen + water swing (`ΔM_gly`), from the skeletal-muscle share of lean mass — the day-to-day scale wobble glycogen and its bound water can account for on their own, not fat
 
 The full formula sheet, with sources, is shown at the top of the page.
@@ -58,9 +60,11 @@ Because `BMR` and `Eₐ` are affine in `m` (`M(m) = A + B·m`), holding `Eᵢₙ
 
 A second, slower feedback path fights the first one: metabolic adaptation. `BMR_a(t) = BMR × (1 − λt)` drags the baseline draw down as time on the deficit accumulates (capped to `λt_max ≈ 10–15%` by week 10–12), pulling `A` and `B` down together and dragging the true equilibrium `m∞_a` above the naively-computed `m∞`. A plan built on the fast loop alone will undershoot its own forecast — the gap between `m∞` and `m∞_a` is exactly the overshoot the adaptation model predicts.
 
+Short sleep doesn't touch the loop's own sinks — it sits between the fat-loss target and the deficit that has to deliver it. A target rate `Δm` implies a raw deficit `Δm×ρ/7`, but a night below the assumed sleep length only converts a fraction (`η`, the Sleep Efficiency Factor) of any deficit into real fat loss, so `D = (Δm×ρ/7) / η` — a short night needs a bigger `D`, and therefore a lower `Eᵢₙ`, to still deliver the same `Δm`. `η = 1` (no cost) whenever sleep meets or beats the assumed target.
+
 Under a pinned fat-loss percentage (`Δm%`) instead of a fixed `Eᵢₙ`, the loop is closed differently — intake is re-derived from the current mass every period rather than held constant — so there's no equilibrium at all, just proportional decay: `m(t) = m·(1 − Δm%/100)^(t/7)`.
 
-`LBM` and the protein, fiber and fat bands (`P_min`/`P_max`, `F_min`/`F_max`, `G_min`/`G_max`) sit outside this loop — they scale with lean mass or with `Eᵢₙ` itself, not with the energy-balance state, and constrain the *composition* of the input rather than its size.
+`LBM` and the protein, fiber, fat and carbohydrate bands (`P_min`/`P_max`, `F_min`/`F_max`, `G_min`/`G_max`, `C_min`/`C_max`) sit outside this loop — they scale with lean mass or with `Eᵢₙ` itself, not with the energy-balance state, and constrain the *composition* of the input rather than its size.
 
 ## Running it
 
