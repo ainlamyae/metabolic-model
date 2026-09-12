@@ -1,6 +1,6 @@
-# Metabolic Playground
+# Metabolic Model
 
-Interactive calculator for the metabolic math behind weight management — BMR (Mifflin-St Jeor, Katch-McArdle), activity burn, thermic effect of food, and lean-mass-scaled protein, fiber and fat targets. Solve for calories, target body mass, activity, or fat-loss rate from one linked set of equations.
+Interactive first-principles model of the metabolic math behind weight management — BMR (Mifflin-St Jeor, Katch-McArdle), activity burn, thermic effect of food, sleep efficiency, and lean-mass-scaled protein, fiber, fat and carbohydrate targets. Solve for calories, target body mass, activity, or fat-loss rate from one linked set of equations.
 
 Pick a "Solve for" mode and the rest of the sheet updates live as you type, with the full substituted arithmetic — every symbol replaced by the figure actually used — shown below it. Nothing is saved: reload the page, or hit Reset, and it goes back to the default profile.
 
