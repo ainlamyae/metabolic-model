@@ -32,17 +32,15 @@
 
     <rect x="550" y="265" width="180" height="110" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
     <text x="640" y="312" font-size="11.5" font-weight="600">Energy Balance</text>
-    <text x="640" y="335" font-size="12" fill="var(--ink-soft)">D = BMR + Eₐ + TEF − Eᵢₙ</text>
+    <text x="640" y="335" font-size="12" fill="var(--ink-soft)">D = Eᵢₙ − (BMR + Eₐ + TEF)</text>
 
     <rect x="810" y="185" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
     <text x="900" y="213" font-size="11.5" font-weight="600">Glycogen + Water Swing</text>
     <text x="900" y="232" font-size="12" fill="var(--ink-soft)">ΔM_gly</text>
 
     <rect x="810" y="272" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="900" y="289" font-size="11.5" font-weight="600">Body Mass Change</text>
-    <text x="900" y="303" font-size="12" fill="var(--ink-soft)">m</text>
-    <text x="900" y="317" font-size="10" fill="var(--ink-soft)">fat change (g) = D / ρ</text>
-    <text x="900" y="330" font-size="10" fill="var(--ink-soft)">m(t) = m̄ + fat change</text>
+    <text x="900" y="300" font-size="11.5" font-weight="600">Body Mass Change</text>
+    <text x="900" y="320" font-size="12" fill="var(--ink-soft)">m(t) = m̄ + D / ρ</text>
   </g>
 
   <!-- Every arrow carries one named signal and meets its block's edge perpendicularly. -->
@@ -76,7 +74,7 @@
     <text x="598" y="440" text-anchor="middle">δ</text>
     <text x="510" y="396" text-anchor="middle">Eᵢₙ</text>
     <text x="770" y="298" text-anchor="middle">D</text>
-    <text x="1002" y="330" text-anchor="start">m</text>
+    <text x="1000" y="330" text-anchor="middle">m(t)</text>
     <text x="1030" y="262" text-anchor="start">ΔM_gly</text>
     <text x="424" y="125" text-anchor="middle">m̄</text>
     <text x="482" y="160" text-anchor="start">m̄</text>
