@@ -7,7 +7,7 @@ Pick a "Solve for" mode and the rest of the sheet updates live as you type, with
 ## Solve for
 
 - **Calories** — the daily intake that hits your weekly fat-loss target
-- **Target body mass** — the mass a typed intake and day count actually arrive at
+- **Healthy body mass** — the mass a typed intake and day count actually arrive at
 - **Activity** — the daily activity minutes (or, typing a day count instead, solved numerically) that close the gap to your target
 - **Weekly fat loss** — the deficit a typed intake and day count imply
 - **Weekly fat loss %** — hold the loss as a percentage of body mass instead of a fixed kg/week, which follows the proportional decay journey (no plateau) rather than the constant-intake one
@@ -30,7 +30,11 @@ Works for gaining too: a target above your current mass needs a negative Δm (a 
 - A daily carbohydrate band from the same IOM report's 45-65% range, both ends a share of `Eᵢₙ` too
 - A glycogen + water swing (`ΔM_gly`), from the skeletal-muscle share of lean mass — the day-to-day scale wobble glycogen and its bound water can account for on their own, not fat
 
-The full formula sheet, with sources, is shown at the top of the page.
+The full formula sheet is laid out as a numbered scientific document at the top of the page — Section 1 (Human Metabolic System Model) walks through every symbol and equation in defining order, each equation numbered and deep-linkable (`#eqn-N`), each subsection deep-linkable too (`#sec-N`), and every non-obvious constant or claim cited against one of 13 numbered literature references (Section 3) — Boer 1984, Katch-McArdle 1996, Mifflin-St Jeor 1990, ACSM, Nedeltcheva et al. 2010, Garthe et al. 2011, Westerterp 2004, WHO 1995, Chow & Hall 2008, Olsson & Saltin 1970, Helms et al. 2014, USDA DGA, and the IOM's AMDR report. A table of contents at the top of the page is generated from the sheet's own headings, so it can't drift out of sync with them. Section 2 is the interactive calculator itself, described below.
+
+### Figure 1 — the mass/BMI trajectory chart
+
+Above the substituted-arithmetic trace, a chart plots the projected body-mass curve from today's `m̄` to the healthy `m_g`, over the day count/arrival date the sheet just solved for — exponential decay toward equilibrium under a fixed intake, or proportional decay under a pinned weekly percentage, whichever mode is active. The right-hand axis is the same mass rescaled to BMI (`kg/m²`), not a second series. Two reference bands are drawn against it: the WHO healthy-BMI range, and the glycogen + water swing (`ΔM_gly`) straddling the curve, since a day's scale reading can move by that much without any real fat-mass change. A legend below the chart (not overlaid on it) lets you click any entry — the trajectory line, the Today/Goal markers, or either band — to toggle it off. The chart only draws once the sheet has an actual day count and arrival date to plot; at true maintenance (no weekly loss set) there's no journey to show.
 
 ## The body as a system
 
