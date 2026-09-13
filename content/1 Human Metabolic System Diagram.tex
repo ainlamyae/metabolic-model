@@ -25,8 +25,8 @@
 \node[block, below=of tef]     (sleep) {Sleep Deprivation Effect\\ \textcolor{gray}{$\delta$}};
 
 \node[block, minimum height=24mm, right=12mm of $(act.east)!0.5!(tef.east)$, yshift=-4mm] (balance)
-  {Energy Balance\\ \textcolor{gray}{$D = BMR + E_{a} + TEF - E_{in}$}};
-\node[block, right=12mm of balance] (mass) {Body Mass Change\\ \textcolor{gray}{$m$}\\ \textcolor{gray}{fat change (g) $= D/\rho$}\\ \textcolor{gray}{$m(t) = \bar{m} + $ fat change}};
+  {Energy Balance\\ \textcolor{gray}{$D = E_{in} - (BMR + E_{a} + TEF)$}};
+\node[block, right=12mm of balance] (mass) {Body Mass Change\\ \textcolor{gray}{$m(t) = \bar{m} + D/\rho$}};
 \node[block, above=of mass]    (gly)  {Glycogen + Water Swing\\ \textcolor{gray}{$\Delta M_{gly}$}};
 \node[sum,   right=10mm of mass] (sum) {$+$};
 
@@ -63,7 +63,7 @@
               -| ([xshift=-8mm]balance.south);
 \draw[signal] (balance.east) -- node[lbl, above] {$D$} (mass.west);
 
-\draw[signal] (mass.east) -- node[lbl, below] {$m$} (sum.west);
+\draw[signal] (mass.east) -- node[lbl, below] {$m(t)$} (sum.west);
 \draw[signal] (gly.east)  -| node[lbl, above, pos=0.25] {$\Delta M_{gly}$} (sum.north);
 
 % ---- Output ----
