@@ -1268,11 +1268,11 @@ function renderCorrectionFields(plan) {
   const adaptedBmr = bmr * (1 - fraction);
   const lostPct = Math.round(fraction * 1000) / 10;
   setComputedField(bmrEl, String(Math.round(adaptedBmr)));
-  rows.push(['BMR_a', `${Math.round(bmr)} × (1 − ${lostPct}/100)  =  ${Math.round(adaptedBmr)} kcal/day — ${atCap ? `at the ${pctCap}% ceiling` : `by day ${Math.round(days)}`}`]);
+  rows.push(['BMR_adp', `${Math.round(bmr)} × (1 − ${lostPct}/100)  =  ${Math.round(adaptedBmr)} kcal/day — ${atCap ? `at the ${pctCap}% ceiling` : `by day ${Math.round(days)}`}`]);
 
   if (journey === 'pct') {
     setComputedField(plateauEl, '—');
-    rows.push(['m∞_a', 'no plateau on a proportional journey, so no overshoot to report']);
+    rows.push(['m∞_adp', 'no plateau on a proportional journey, so no overshoot to report']);
     return rows;
   }
 
@@ -1286,7 +1286,7 @@ function renderCorrectionFields(plan) {
   const plateauRounded = Math.round(plateauKg * 10) / 10;
   const overshootKg = Math.round((plateauKg - plainPlateauKg) * 10) / 10;
   setComputedField(plateauEl, String(plateauRounded));
-  rows.push(['m∞_a', `(${Math.round(intakeKcal)} − ${Math.round(coefficients.aBmr * (1 - fraction) / coefficients.tefDivisor)}) / ${Math.round(((1 - fraction) * coefficients.bBmr + coefficients.activityPerKg) / coefficients.tefDivisor * 100) / 100}  =  ${plateauRounded} kg${overshootKg > 0 ? ` — ${overshootKg} kg above m∞, which is the usual overshoot` : ''}`]);
+  rows.push(['m∞_adp', `(${Math.round(intakeKcal)} − ${Math.round(coefficients.aBmr * (1 - fraction) / coefficients.tefDivisor)}) / ${Math.round(((1 - fraction) * coefficients.bBmr + coefficients.activityPerKg) / coefficients.tefDivisor * 100) / 100}  =  ${plateauRounded} kg${overshootKg > 0 ? ` — ${overshootKg} kg above m∞, which is the usual overshoot` : ''}`]);
   return rows;
 }
 
@@ -2756,53 +2756,60 @@ function renderEquationMath(text) {
   return result;
 }
 
-// A tiny Markdown-to-HTML converter for README.md, scoped to exactly what the
-// text sections need: ATX headings (## / ### / ####, id auto-derived from
-// the heading text via slugifyHeading — never typed in the source),
-// [label](url) links, blank-line-separated paragraphs, a fenced ```bibtex
-// block (the References section) rendered via parseBibtex/
-// formatIeeeReference above, and 4-space-indented equation lines (see
-// renderReadmeEquations below). Deliberately doesn't touch * or _ as
-// emphasis markers in prose — both appear as literal characters inside
-// variable names like m_g and P_min throughout this content. Inline HTML
-// (<i>, <a target="_blank">) inside a paragraph is passed through as-is,
-// same as any Markdown renderer would.
-function renderReadmeMarkdown(markdown) {
-  const lines = markdown.split('\n');
+// Escapes real LaTeX prose needs but plain web text doesn't: \% \_ \& read
+// back as % _ &, and a ~ (LaTeX's non-breaking space) as a plain space.
+// Subscript/superscript underscores inside equations are never escaped
+// (that's what makes them math-mode operators, not literal characters), so
+// this never touches those.
+function stripLatexEscapes(text) {
+  return text.replace(/\\%/g, '%').replace(/\\_/g, '_').replace(/\\&/g, '&').replace(/~/g, ' ');
+}
+
+// Equation-only LaTeX spacing/sizing macros that have no visual equivalent
+// this renderer needs — stripped to their plain-text content before the
+// \frac/sub/sup pass in renderEquationMath.
+function stripEquationMacros(text) {
+  return text
+    .replace(/\\quad/g, ' ')
+    .replace(/\\text\{([^{}]*)\}/g, '$1')
+    .replace(/\\left([[(])/g, '$1')
+    .replace(/\\right([\])])/g, '$1')
+    .replace(/\\!/g, '')
+    .replace(/\\min/g, 'min')
+    .replace(/\\max/g, 'max')
+    .replace(/\\ln/g, 'ln');
+}
+
+// A small LaTeX-to-HTML converter for "2 Human Metabolic System Model.tex",
+// scoped to exactly the constructs that file uses: \section/\subsection/
+// \subsubsection (id auto-derived via slugifyHeading, never typed), blank-
+// line-separated paragraphs, and \begin{equation}\label{x}...\end{equation}
+// blocks (consecutive ones grouped into one scrollable eqn-scroll, same as
+// the equation-run grouping the sheet already used under Markdown). Citation
+// numbers come from citationNumberByKey, built by the caller from the
+// separately-fetched references.bib — this function only resolves \eqref
+// against labels it finds in the same document.
+function renderReadmeLatex(texSource, citationNumberByKey) {
+  const lines = texSource.split('\n');
 
   // Pass 1: number every equation by document order and record that number
-  // against its {#eqn_label} — a permanent key, independent of position,
-  // that \eqref{eqn_label} in prose resolves against. Add, remove, or
-  // reorder equations and every number updates itself; no label, and no
-  // \eqref using it, ever needs to change. Citation numbers get the same
-  // treatment, keyed by the BibTeX entry's own key (e.g. ref_iom2005)
-  // instead of a label, since that's already a permanent, unique handle.
+  // against its \label{eqn_x} — a permanent key, independent of position,
+  // that \eqref{eqn_x} in prose resolves against.
   const equationNumberByLabel = {};
   let equationTotal = 0;
-  lines.forEach((rawLine) => {
-    if (/^ {4}\S/.test(rawLine)) {
+  lines.forEach((rawLine, i) => {
+    if (/^\s*\\begin\{equation\}/.test(rawLine)) {
       equationTotal += 1;
-      const labelMatch = rawLine.match(/\{#([\w-]+)\}\s*$/);
+      const labelMatch = (lines[i + 1] || '').match(/^\s*\\label\{([\w-]+)\}/);
       if (labelMatch) equationNumberByLabel[labelMatch[1]] = equationTotal;
     }
   });
 
-  const citationNumberByKey = {};
-  {
-    const bibtexStart = lines.findIndex((l) => l.trim() === '```bibtex');
-    if (bibtexStart !== -1) {
-      const bibtexLines = [];
-      for (let j = bibtexStart + 1; j < lines.length && lines[j].trim() !== '```'; j += 1) {
-        bibtexLines.push(lines[j]);
-      }
-      parseBibtex(bibtexLines.join('\n')).forEach((entry, index) => {
-        citationNumberByKey[entry.key] = index + 1;
-      });
-    }
-  }
-
   function resolveRefs(text) {
-    return text
+    return stripLatexEscapes(text)
+      .replace(/\{,\}/g, ',')
+      .replace(/\\emph\{([^{}]*)\}/g, '<em>$1</em>')
+      .replace(/\$([^$]+)\$/g, (match, math) => renderEquationMath(math))
       .replace(/\\eqref\{([\w-]+)\}/g, (match, label) => {
         const num = equationNumberByLabel[label];
         return num ? `<a href="#${label}">(${num})</a>` : match;
@@ -2825,60 +2832,64 @@ function renderReadmeMarkdown(markdown) {
   }
 
   for (let i = 0; i < lines.length; i += 1) {
-    const rawLine = lines[i];
+    const line = lines[i].trim();
 
-    // Equation block: one or more consecutive 4-space-indented lines, each
-    // optionally ending in {#label}. Numbered purely by position (matching
-    // the pass-1 count above) and anchored at that label, or at eqn-N when a
-    // line has none.
-    if (/^ {4}\S/.test(rawLine)) {
+    if (line === '' || line.startsWith('%') || /^\\(maketitle|title\{|date\{|bibliographystyle\{|bibliography\{|input\{)/.test(line)) {
+      flushParagraph();
+      continue;
+    }
+
+    // Equation run: one or more consecutive \begin{equation} blocks (no
+    // prose between them), grouped into one scrollable container, same as
+    // a multi-line equation block used to be.
+    if (/^\\begin\{equation\}/.test(line)) {
       flushParagraph();
       const rows = [];
-      while (i < lines.length && /^ {4}\S/.test(lines[i])) {
+      while (i < lines.length && /^\\begin\{equation\}/.test(lines[i].trim())) {
         equationCount += 1;
-        const trimmed = lines[i].trim();
-        const labelMatch = trimmed.match(/\{#([\w-]+)\}\s*$/);
-        const id = labelMatch ? labelMatch[1] : `eqn-${equationCount}`;
-        const body = trimmed.replace(/\s*\{#[\w-]+\}\s*$/, '');
-        rows.push(`<div class="eqn-row" id="${id}"><span class="eqn-body">${renderEquationMath(body)}</span><a class="eqn-num" href="#${id}">(${equationCount})</a></div>`);
+        let label = null;
+        const bodyLines = [];
         i += 1;
+        while (i < lines.length && !/^\\end\{equation\}/.test(lines[i].trim())) {
+          const t = lines[i].trim();
+          const labelMatch = t.match(/^\\label\{([\w-]+)\}$/);
+          if (labelMatch) label = labelMatch[1];
+          else if (t !== '') bodyLines.push(t);
+          i += 1;
+        }
+        const id = label || `eqn-${equationCount}`;
+        const body = stripEquationMacros(stripLatexEscapes(bodyLines.join(' ')));
+        rows.push(`<div class="eqn-row" id="${id}"><span class="eqn-body">${renderEquationMath(body)}</span><a class="eqn-num" href="#${id}">(${equationCount})</a></div>`);
+        i += 1; // past this block's \end{equation}
+        while (i < lines.length && lines[i].trim() === '') i += 1; // skip blanks before checking for the next \begin{equation}
       }
       i -= 1;
       htmlParts.push(`<div class="formula-expression"><div class="eqn-scroll">${rows.join('')}</div></div>`);
       continue;
     }
 
-    const line = rawLine.trim();
-
-    if (line.startsWith('```')) {
+    if (/^\\begin\{description\}/.test(line)) {
       flushParagraph();
-      const language = line.slice(3).trim();
-      const blockLines = [];
-      i += 1;
-      while (i < lines.length && lines[i].trim() !== '```') {
-        blockLines.push(lines[i]);
-        i += 1;
-      }
-      if (language === 'bibtex') {
-        parseBibtex(blockLines.join('\n')).forEach((entry, index) => {
-          htmlParts.push(`<p class="ref-item" id="${entry.key}">${formatIeeeReference(entry, index + 1)}</p>`);
-        });
-      }
+      htmlParts.push('<dl class="glossary">');
+      continue;
+    }
+    if (/^\\end\{description\}/.test(line)) {
+      htmlParts.push('</dl>');
+      continue;
+    }
+    const itemMatch = line.match(/^\\item\[(.+?)\]\s*(.*)$/);
+    if (itemMatch) {
+      htmlParts.push(`<dt>${resolveRefs(itemMatch[1])}</dt><dd>${resolveRefs(itemMatch[2])}</dd>`);
       continue;
     }
 
-    const headingMatch = line.match(/^(#{2,4})\s+(.*)$/);
+    const headingMatch = line.match(/^\\(section|subsection|subsubsection)\{(.+)\}$/);
     if (headingMatch) {
       flushParagraph();
-      const level = headingMatch[1].length;
+      const level = { section: 2, subsection: 3, subsubsection: 4 }[headingMatch[1]];
       const text = headingMatch[2].trim();
       const id = slugifyHeading(text);
       htmlParts.push(`<h${level} id="${id}">${renderMarkdownInline(resolveRefs(text))}</h${level}>`);
-      continue;
-    }
-
-    if (line === '') {
-      flushParagraph();
       continue;
     }
 
@@ -2888,29 +2899,47 @@ function renderReadmeMarkdown(markdown) {
   return htmlParts.join('\n');
 }
 
-// index.html ships only an empty #sheet-root. The text (README.md, authored
-// as Markdown, Sections 1 and 3) and the calculation UI
-// ("Interactive Calculation Sheet.html", Section 2) are fetched, the README
-// converted from Markdown, and both spliced together here, in that order,
-// before the existing init logic below — which finds everything by id
-// exactly as it did when it was static markup — runs and builds out the
-// citations, cross-references, and numbering.
+// The References section's HTML, built straight from references.bib via the
+// same parseBibtex/formatIeeeReference pipeline the sheet already used for
+// its embedded bibliography — only the source moved to its own file.
+function renderReferencesSection(bibText) {
+  const entries = parseBibtex(bibText);
+  const items = entries.map((entry, index) => `<p class="ref-item" id="${entry.key}">${formatIeeeReference(entry, index + 1)}</p>`).join('\n');
+  return { html: `<h2 id="references">References</h2>\n${items}`, entries };
+}
+
+// index.html ships only an empty #sheet-root. Everything it shows lives in
+// content/, numbered in page order: 1 the system diagram, 2 the model text
+// (LaTeX fragment), 3 the glossary (LaTeX fragment), 4 the bibliography
+// (BibTeX), 5 the calculation UI. README.md is never fetched here. All are
+// spliced together in that order before the init logic below runs.
 async function loadSheet() {
   const sheetRoot = document.getElementById('sheet-root');
-  const [readmeMarkdown, sheetHtml] = await Promise.all([
-    fetch('README.md', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('Interactive Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
+  const [texSource, glossarySource, bibText, sheetHtml, systemDiagramHtml] = await Promise.all([
+    fetch('content/2 Human Metabolic System Model.tex', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/3 Glossary.tex', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/4 References.bib', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/5 Interactive Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/1 Human Metabolic System Diagram.html', { cache: 'no-store' }).then((response) => response.text()),
   ]);
 
-  const readmeHtml = renderReadmeMarkdown(readmeMarkdown);
-  const readmeNodes = [...new DOMParser().parseFromString(readmeHtml, 'text/html').body.childNodes];
-  const sec3Index = readmeNodes.findIndex((node) => node.tagName === 'H2' && node.textContent.trim() === 'References');
-  const textNodes = sec3Index === -1 ? readmeNodes : readmeNodes.slice(0, sec3Index);
-  const referenceNodes = sec3Index === -1 ? [] : readmeNodes.slice(sec3Index);
+  const citationNumberByKey = {};
+  parseBibtex(bibText).forEach((entry, index) => { citationNumberByKey[entry.key] = index + 1; });
 
-  textNodes.forEach((node) => sheetRoot.appendChild(document.importNode(node, true)));
+  const modelHtml = renderReadmeLatex(texSource, citationNumberByKey);
+  const modelNodes = [...new DOMParser().parseFromString(modelHtml, 'text/html').body.childNodes];
+
+  // The system diagram goes under its own "Human Metabolic System Diagram" section
+  // — the same spot the .tex \input{}s it — found by heading text, not position.
+  const overviewIndex = modelNodes.findIndex((node) => node.tagName === 'H2' && node.textContent.trim() === 'Human Metabolic System Diagram');
+  modelNodes.forEach((node, i) => {
+    sheetRoot.appendChild(document.importNode(node, true));
+    if (i === overviewIndex) sheetRoot.insertAdjacentHTML('beforeend', systemDiagramHtml);
+  });
+
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(glossarySource, citationNumberByKey));
+  sheetRoot.insertAdjacentHTML('beforeend', renderReferencesSection(bibText).html);
   sheetRoot.insertAdjacentHTML('beforeend', sheetHtml);
-  referenceNodes.forEach((node) => sheetRoot.appendChild(document.importNode(node, true)));
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

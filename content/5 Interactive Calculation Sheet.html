@@ -221,13 +221,13 @@
         <span class="formula-unit">% of BMR</span>
     </label>
     <label class="formula-row" title="BMR_adapt(t) = BMR × (1 − λt), at the day count t above.">
-        <span class="formula-sym">BMR_a</span>
+        <span class="formula-sym">BMR_adp</span>
         <span class="formula-name">adapted BMR by t</span>
         <input type="text" id="formula-bmr-adapt" inputmode="decimal" readonly>
         <span class="formula-unit">kcal/day</span>
     </label>
     <label class="formula-row" title="The plateau once BMR has adapted: the same m∞ = (Eᵢₙ − A)/B with the BMR half of A and B scaled by (1 − λt). It sits ABOVE the m∞ printed in the trace, and that gap is why a constant-BMR forecast tends to overshoot in practice.">
-        <span class="formula-sym">m∞_a</span>
+        <span class="formula-sym">m∞_adp</span>
         <span class="formula-name">adapted plateau, and the overshoot it implies</span>
         <input type="text" id="formula-plateau-adapt" inputmode="decimal" readonly>
         <span class="formula-unit">kg</span>
@@ -312,13 +312,13 @@
          (0.5 g/kg) — two different bases, unlike protein's single LBM, so both
          coefficients are editable and neither rides on a box the other computes. -->
     <label class="formula-row">
-        <span class="formula-sym">f_min</span>
+        <span class="formula-sym">b_min</span>
         <span class="formula-name">dietary fiber floor per 1,000 kcal of intake</span>
         <input type="text" id="formula-fiber-per-1000kcal-min" inputmode="decimal">
         <span class="formula-unit">g/1,000 kcal</span>
     </label>
     <label class="formula-row">
-        <span class="formula-sym">f_max</span>
+        <span class="formula-sym">b_max</span>
         <span class="formula-name">dietary fiber ceiling per kg of body weight</span>
         <input type="text" id="formula-fiber-per-kg-max" inputmode="decimal">
         <span class="formula-unit">g/kg/day</span>
@@ -414,7 +414,7 @@
     <div class="mtc-subplot-label">(c) Calories intake</div>
     <div id="activity-chart" class="mtc-subplot"></div>
     <div class="mtc-subplot-label">(d) Activity</div>
-    <figcaption>Fig. 1. Four linked subplots over the same projected timeline, from today through 14 days past the estimated arrival date (dashed vertical line); past arrival, mass holds at m_g and Eᵢₙ steps up to whatever intake keeps the balance in (b) at zero, so all four panels' tails show maintenance rather than more of the same deficit. (a) Projected body mass trajectory from the current 7-day rolling average (m̄) to the healthy mass (m_g), under the exponential decay model of <a href="#sec-1-11">Section 1.3</a>. The amber band denotes the glycogen- and water-attributable scale swing (ΔM_gly) straddling the curve, per <a href="#sec-1-12">Section 1.4</a>; the teal band marks the WHO healthy body-mass-index range (18.5–24.9 kg/m²), per <a href="#sec-1-1-3">Section 1.1.3</a>. Right ordinate: body mass index, a linear rescaling of the left ordinate by height. (b) Daily <a href="#energy-balance-components">energy balance</a>, signed by physical direction: energy leaving the body — <a href="#resting-metabolic-rate">BMR</a>, <a href="#activity-burn">Eₐ</a>, their sum M, and digestion cost <a href="#thermic-effect-of-food">TEF</a> — plotted negative, and intake Eᵢₙ entering it plotted positive; D, the net balance, negative during an actual deficit and positive during a surplus, with the <a href="#sleep-deprivation-effect">sleep-deprivation</a> penalty (δ) shown positive when present. Right ordinate: grams of dietary fat, a fixed 9 kcal/g rescaling of the same left-ordinate values. (c) <a href="#desire-daily-intake">Eᵢₙ</a>, the desired daily intake held fixed through the trajectory (left ordinate, kcal/day); layered beneath it, purely comparative, the <a href="#protein-requirements">protein</a>, <a href="#dietary-fiber-requirements">dietary fiber</a>, <a href="#fat-requirements">fat</a> and <a href="#carbohydrate-requirements">carbohydrate</a> bands (bottom to top), each a solid floor at its minimum under a lighter ceiling at its maximum — no gram axis, since the stack sums four different substances a single scale couldn't read accurately for any one of them. (d) Activity calories burned, negative as energy leaving the body (left ordinate), against the fixed activity duration τ (right ordinate, a duration rather than an energy flow, so left positive; dashed).</figcaption>
+    <figcaption>Fig. 2. Four linked subplots over the same projected timeline, from today through 14 days past the estimated arrival date (dashed vertical line); past arrival, mass holds at m_g and Eᵢₙ steps up to whatever intake keeps the balance in (b) at zero, so all four panels' tails show maintenance rather than more of the same deficit. (a) Projected body mass trajectory from the current 7-day rolling average (m̄) to the healthy mass (m_g), under the exponential decay model of <a href="#maintenance-and-mass-trajectory">Section 2.3</a>. The amber band denotes the glycogen- and water-attributable scale swing (ΔM_gly) straddling the curve, per <a href="#glycogen-and-water-storage">Section 2.4</a>; the teal band marks the WHO healthy body-mass-index range (18.5–24.9 kg/m²), per <a href="#healthy-human-body-mass-index">Section 2.1.3</a>. Right ordinate: body mass index, a linear rescaling of the left ordinate by height. (b) Daily <a href="#energy-balance-components">energy balance</a>, signed by physical direction: energy leaving the body — <a href="#resting-metabolic-rate">BMR</a>, <a href="#activity-burn">Eₐ</a>, their sum M, and digestion cost <a href="#thermic-effect-of-food">TEF</a> — plotted negative, and intake Eᵢₙ entering it plotted positive; D, the net balance, negative during an actual deficit and positive during a surplus, with the <a href="#sleep-deprivation-effect">sleep-deprivation</a> penalty (δ) shown positive when present. Right ordinate: grams of dietary fat, a fixed 9 kcal/g rescaling of the same left-ordinate values. (c) <a href="#desire-daily-intake">Eᵢₙ</a>, the desired daily intake held fixed through the trajectory (left ordinate, kcal/day); layered beneath it, purely comparative, the <a href="#protein-requirements">protein</a>, <a href="#dietary-fiber-requirements">dietary fiber</a>, <a href="#fat-requirements">fat</a> and <a href="#carbohydrate-requirements">carbohydrate</a> bands (bottom to top), each a solid floor at its minimum under a lighter ceiling at its maximum — no gram axis, since the stack sums four different substances a single scale couldn't read accurately for any one of them. (d) Activity calories burned, negative as energy leaving the body (left ordinate), against the fixed activity duration τ (right ordinate, a duration rather than an energy flow, so left positive; dashed).</figcaption>
 </figure>
 
 <div id="formula-substituted" class="formula-substituted"></div>

@@ -1,0 +1,88 @@
+% A content fragment, meant to be \input{} or \include{}d from a master
+% document alongside "2 Human Metabolic System Model.tex" — same
+% requirements (amsmath, unicode-math + fontspec, compiled with xelatex or
+% lualatex for the raw Unicode symbols below).
+
+\section{Glossary}
+
+\subsection{Acronyms}
+
+\begin{description}
+\item[ACSM] American College of Sports Medicine.
+\item[AMDR] Acceptable Macronutrient Distribution Range.
+\item[BMI] Body mass index.
+\item[BMR] Basal (resting) metabolic rate.
+\item[IOM] Institute of Medicine.
+\item[LBM] Lean body mass.
+\item[MET] Metabolic equivalent of task.
+\item[TEF] Thermic effect of food.
+\item[USDA] U.S. Department of Agriculture.
+\item[WHO] World Health Organization.
+\end{description}
+
+\subsection{Symbols and Variables}
+
+\begin{description}
+\item[$A, B$] Affine maintenance coefficients, $M(m̄) = A + B×m̄$.
+\item[$a$] Age (years).
+\item[$BMI_{g}$] Body mass index at $m_{g}$ (kg/m$^2$).
+\item[$BMR$] Resting metabolic rate (kcal/day).
+\item[$b$] Dietary fiber coefficient (g per 1{,}000 kcal; g/kg).
+\item[$C$] Daily carbohydrate (g/day).
+\item[$c_{m}, c_{h}, c_{0}$] Boer lean-body-mass coefficients.
+\item[$D$] Daily energy deficit (kcal/day).
+\item[$E_{a}$] Daily activity burn (kcal/day).
+\item[$E_{in}$] Daily energy intake (kcal/day).
+\item[$F$] Daily dietary fiber (g/day).
+\item[$f$] Thermic effect of food as a fraction of $E_{in}$.
+\item[$G$] Daily fat (g/day).
+\item[$g_{liver}$] Liver glycogen store (g).
+\item[$g_{musc}$] Muscle glycogen density (g/kg).
+\item[$h$] Height (cm).
+\item[$k$] Fat share of $E_{in}$ (\%).
+\item[$LBM$] Lean body mass (kg).
+\item[$m$] Body mass (kg).
+\item[$m̄$] 7-day rolling average body mass (kg).
+\item[$m_{g}$] Healthy body mass (kg).
+\item[$m_{gly}$] Stored glycogen mass (g).
+\item[$m_{musc}$] Skeletal muscle mass (kg).
+\item[$m∞$] Equilibrium body mass (kg).
+\item[$MET$] Metabolic equivalent of the activity.
+\item[$P$] Daily protein (g/day).
+\item[$p$] Protein per kg of lean body mass (g/kg/day).
+\item[$q$] Carbohydrate share of $E_{in}$ (\%).
+\item[$r$] Water bound per gram of glycogen (g/g).
+\item[$s$] Sleep duration (h); skeletal-muscle fraction of $LBM$ in glycogen storage.
+\item[$s_{d}$] Desire sleep duration (h).
+\item[$t$] Elapsed time (days).
+\item[$Δm$] Weekly fat-mass change (kg/week).
+\item[$Δm\%$] Weekly fat-mass change relative to $m̄$ (\%).
+\item[$ΔM_{gly}$] Glycogen and water mass swing (kg).
+\item[$γ$] Sleep deprivation rate (\%/h).
+\item[$δ$] Sleep deprivation effect (kcal/day).
+\item[$ε$] Oxygen energy yield (mL O$_2$/kcal).
+\item[$η$] Sleep efficiency factor.
+\item[$κ$] Oxygen uptake per MET (mL O$_2$/kg/min).
+\item[$λ$] Metabolic adaptation rate (\%/week).
+\item[$λt_{max}$] Metabolic adaptation ceiling (\%).
+\item[$ρ$] Energy density of body fat (kcal/kg).
+\item[$σ$] Sex.
+\item[$τ$] Activity duration (min/day).
+\end{description}
+
+\subsection{Subscripts and Indices}
+
+\begin{description}
+\item[$a$] Activity.
+\item[$adp$] Metabolic-adaptation adjusted.
+\item[$d$] Desire.
+\item[$g$] Healthy reference value.
+\item[$gly$] Glycogen.
+\item[$h$] Height term.
+\item[$in$] Intake.
+\item[$liver$] Liver.
+\item[$m$] Body-mass term.
+\item[$min, max$] Lower and upper bound.
+\item[$musc$] Skeletal muscle.
+\item[$0$] Constant term.
+\end{description}
