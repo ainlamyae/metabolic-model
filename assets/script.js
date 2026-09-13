@@ -1,4 +1,4 @@
-// Metabolic Model — standalone extraction of the "Tune" sheet from the
+﻿// Metabolic Model — standalone extraction of the "Tune" sheet from the
 // ledger app's Health Indicator panel. No saving, no pinning: every box is
 // either typed or computed live, and reloading the page resets it to the
 // default profile below. `currentSettings` stays permanently empty — it
@@ -551,103 +551,6 @@ function applySolveForMode(mode) {
       el.classList.remove('formula-field-computed');
     }
   });
-}
-
-const FORMULA_EXPRESSION = `Smoothing the scale — daily weight carries water and glycogen, m(t) means clean mass
-    m̄    =  (1/7) × Σ m(t−i),  i = 0…6
-Lean body mass — Boer (1984)
-    LBM  =  0.407×m̄  +  0.267×h  −  19.2      (♂)
-    LBM  =  0.252×m̄  +  0.473×h  −  48.3      (♀)
-Resting metabolic rate — Katch-McArdle (1996), from lean mass instead of age/sex
-    BMR  =  370  +  21.6×LBM
-Resting metabolic rate — Mifflin-St Jeor (1990)
-    BMR  =  10×m̄  +  6.25×h  −  5×a  +  σ
-Activity burn at the daily target — ACSM metabolic equation
-    Eₐ   =  MET × m̄ × τ × κ / ε
-Sleep Efficiency Factor — reduction in fat-loss efficiency per hour of sleep debt
-    η    =  1 − (γ/100) × max(0, s_desire − s)
-Weekly fat loss as a share of body mass — 0.5–1%/week band
-    Δm%  =  100 × Δm / m̄
-Daily energy deficit implied by the weekly fat-loss target, short sleep needs more of it
-    D    =  (Δm × ρ / 7) / η
-Thermic effect of food — a share of the very intake being solved for
-    TEF  =  f × Eᵢₙ
-Target daily intake — TEF folded in by solving, not by adding
-    Eᵢₙ  =  BMR  +  Eₐ  +  TEF  −  D    =    (BMR  +  Eₐ  −  D) / (1 − f)
-The target body mass as a BMI — 18.5–24.9 healthy band
-    BMI_g =  m_g / (h/100)²
-Maintenance is affine in body mass — M(m̄) = A + B×m̄
-    A    =  (6.25×h  −  5×a  +  σ) / (1 − f)           under Mifflin
-    B    =  (10  +  MET × τ × κ / ε) / (1 − f)         under Mifflin
-    A    =  (370  +  21.6×(c_h×h + c_0)) / (1 − f)     under Katch
-    B    =  (21.6×c_m  +  MET × τ × κ / ε) / (1 − f)   under Katch
-Body mass at which Eᵢₙ becomes maintenance
-    m∞   =  (Eᵢₙ  −  A) / B
-Exponential decay toward m∞, not linear loss
-    m̄(t) =  m∞  +  (m̄ − m∞) × e^(−B×t/ρ)
-    t    =  (ρ / B) × ln[ (m̄ − m∞) / (m_g − m∞) ]
-Proportional journey instead, when Δm% is what's held — no plateau, so no m∞
-    m̄(t) =  m̄ × (1 − Δm%/100)^(t/7)
-    t    =  7 × ln(m̄ / m_g) / −ln(1 − Δm%/100)
-Metabolic adaptation — BMR sags faster than the lost mass alone predicts
-    BMR_a(t) = BMR × (1 − λt),  λt capped at λt_max ≈ 10–15% by week 10–12
-    m∞_a =  (Eᵢₙ − A_a) / B_a,  the BMR half of A and B scaled by (1 − λt)
-Skeletal muscle mass — the fraction of LBM that actually stores glycogen
-    m_musc =  s × LBM
-Glycogen store, from muscle mass
-    m_gly  =  g_musc × m_musc  +  g_liver
-Glycogen-bound water — the swing glycogen alone accounts for, not fat
-    ΔM_gly =  m_gly × (1 + r) / 1000
-Daily protein band, scaled to lean mass
-    P_min =  p_min × LBM
-    P_max =  p_max × LBM
-Fiber band — a floor from daily intake, a ceiling from body weight
-    F_min =  f_min × (Eᵢₙ / 1000)
-    F_max =  f_max × m̄
-Fat band — both ends a share of intake, 20-35% AMDR
-    G_min =  (k_min/100 × Eᵢₙ) / 9
-    G_max =  (k_max/100 × Eᵢₙ) / 9
-Carb band — both ends a share of intake, 45-65% AMDR
-    C_min =  (q_min/100 × Eᵢₙ) / 4
-    C_max =  (q_max/100 × Eᵢₙ) / 4`;
-
-// Builds the formula-expression block as real elements rather than padded
-// text: every equation line (the ones indented 4 spaces in FORMULA_EXPRESSION)
-// becomes a flex row with its number pinned to the right edge via CSS, not
-// whitespace — so the numbers line up regardless of how long the equation is.
-// Each row gets id="eqn-N", the number is a same-page link to that id, and
-// #eqn-N:target is highlighted — the same "click the number, jump to the
-// equation" behaviour a LaTeX-built PDF gives its own numbered equations, so
-// prose anywhere on the page can later cite an equation as a working link.
-function buildFormulaExpressionNodes(source) {
-  const isEquationLine = (line) => /^ {4}\S/.test(line);
-  const scroll = document.createElement('div');
-  scroll.className = 'eqn-scroll';
-  let count = 0;
-  source.split('\n').forEach((line) => {
-    if (isEquationLine(line)) {
-      count += 1;
-      const id = `eqn-${count}`;
-      const row = document.createElement('div');
-      row.className = 'eqn-row';
-      row.id = id;
-      const body = document.createElement('span');
-      body.className = 'eqn-body';
-      body.textContent = line.slice(4);
-      const num = document.createElement('a');
-      num.className = 'eqn-num';
-      num.href = `#${id}`;
-      num.textContent = `(${count})`;
-      row.append(body, num);
-      scroll.appendChild(row);
-    } else {
-      const heading = document.createElement('div');
-      heading.className = 'eqn-heading';
-      heading.textContent = line;
-      scroll.appendChild(heading);
-    }
-  });
-  return scroll;
 }
 
 function formulaFieldValue(field) {
@@ -1390,6 +1293,9 @@ function renderCorrectionFields(plan) {
 function renderFormulaPreview() {
   renderFormulaPreviewCore();
   renderMassTrajectoryChart();
+  renderBalanceChart();
+  renderCaloriesIntakeChart();
+  renderActivityChart();
 }
 
 // Walks the sheet's own h2/h3/h4 headings (numbers themselves are CSS
@@ -1437,13 +1343,120 @@ function buildTableOfContents() {
 // Samples the mass-over-time curve at day t: exponential decay to
 // equilibrium under a fixed intake, or proportional decay under a fixed
 // weekly percentage — the same two formulas eqns. (18) and (20) use.
+// Days appended after arrival, at the desire mass, so every subplot's tail
+// shows what maintenance looks like once the deficit that drove (a) is gone.
+const MAINTENANCE_EXTENSION_DAYS = 14;
+
 function massTrajectoryAtDay(inputs, t) {
+  if (t > inputs.tTotal) return inputs.mg;
   if (inputs.mode === 'pct') {
     return inputs.m0 * Math.pow(1 - inputs.weeklyPct / 100, t / 7);
   }
   const { m0, equilibriumKg, b } = inputs;
   return equilibriumKg + (m0 - equilibriumKg) * Math.exp((-b * t) / GENERIC_KCAL_PER_KG_FAT);
 }
+
+// The BMR/activity/TEF inputs the balance, calories-intake, and activity
+// subplots need to recompute maintenance at any day's mass — read
+// independently of which journey mode (intake vs weekly %) is driving the
+// mass curve itself, since these sheet fields exist regardless of mode. Null
+// when the sheet doesn't have enough typed to know them (e.g. a weekly-%
+// journey that never needed Eᵢₙ).
+function readMaintenanceCoefficients() {
+  const heightCm = formulaNumber('formula-height');
+  const einKcal = formulaNumber('formula-ein');
+  const age = formulaNumber('formula-age');
+  const sex = document.getElementById('formula-sex').value;
+  const met = formulaNumber('formula-met');
+  const tau = formulaNumber('formula-activity-min');
+  const kappa = formulaNumber('formula-met-o2');
+  const tefPct = formulaNumber('formula-tef-pct');
+  const formula = currentBmrFormula();
+  if (heightCm === null || einKcal === null || met === null || tau === null
+    || kappa === null || tefPct === null) return null;
+  if (formula !== 'katch' && age === null) return null;
+
+  const coefficients = maintenanceAffineCoefficients({
+    heightCm, age: age ?? 0, sex, met, tau, kappa, formula, tef: tefPct,
+  });
+  if (!Number.isFinite(coefficients.a) || !Number.isFinite(coefficients.b)) return null;
+
+  const sleepEffect = formulaNumber('formula-deprivation-effect');
+  return {
+    einKcal,
+    tau,
+    coefficients,
+    sleepDeprivationKcal: sleepEffect !== null && sleepEffect > 0 ? sleepEffect : 0,
+  };
+}
+
+// Maintenance (BMR + activity burn) at mass `mass`, from the affine
+// coefficients above — M(m) = A_bmr + (B_bmr + activity/kg) × m.
+function maintenanceKcalAtMass(coefficients, mass) {
+  return coefficients.aBmr + (coefficients.bBmr + coefficients.activityPerKg) * mass;
+}
+
+// The dietary-requirement bands' own coefficients (§1.5), read once — same
+// fields renderProteinFields/renderFiberFields/renderFatFields/
+// renderCarbFields already read, so re-derived here rather than duplicated
+// with different numbers. Ein isn't baked in here: it's passed into
+// macroBandsAtMass separately, since past arrival Eᵢₙ itself jumps to the
+// new maintenance level, and fat/carb/fiber's floor need to follow it.
+function readMacroBandCoefficients() {
+  const heightCm = formulaNumber('formula-height');
+  const sex = document.getElementById('formula-sex').value;
+  const proteinPerKgMin = formulaNumber('formula-protein-per-kg-min');
+  const proteinPerKgMax = formulaNumber('formula-protein-per-kg-max');
+  const fiberPerKcalMin = formulaNumber('formula-fiber-per-1000kcal-min');
+  const fiberPerKgMax = formulaNumber('formula-fiber-per-kg-max');
+  const fatPctMin = formulaNumber('formula-fat-pct-min');
+  const fatPctMax = formulaNumber('formula-fat-pct-max');
+  const carbPctMin = formulaNumber('formula-carb-pct-min');
+  const carbPctMax = formulaNumber('formula-carb-pct-max');
+  if ([heightCm, proteinPerKgMin, proteinPerKgMax, fiberPerKcalMin, fiberPerKgMax,
+    fatPctMin, fatPctMax, carbPctMin, carbPctMax].some((v) => v === null)) return null;
+
+  return {
+    heightCm,
+    sex,
+    proteinPerKgMin: Math.min(proteinPerKgMin, proteinPerKgMax),
+    proteinPerKgMax: Math.max(proteinPerKgMin, proteinPerKgMax),
+    fiberPerKcalMin,
+    fiberPerKgMax,
+    fatPctMin,
+    fatPctMax,
+    carbPctMin,
+    carbPctMax,
+  };
+}
+
+// The four macro bands at one day's mass and that day's own Eᵢₙ — protein's
+// both ends and fiber's ceiling move with mass (lean mass and body weight
+// respectively); fiber's floor, fat and carb move with Eᵢₙ instead, which is
+// constant pre-arrival and a step up to the maintenance level after it.
+function macroBandsAtMass(macro, mass, einKcal) {
+  const lbmKg = boerLeanBodyMassKg(mass, macro.heightCm, macro.sex);
+  return {
+    protein: { minG: macro.proteinPerKgMin * lbmKg, maxG: macro.proteinPerKgMax * lbmKg },
+    fiber: { minG: macro.fiberPerKcalMin * (einKcal / 1000), maxG: macro.fiberPerKgMax * mass },
+    fat: { minG: ((macro.fatPctMin / 100) * einKcal) / KCAL_PER_G_FAT, maxG: ((macro.fatPctMax / 100) * einKcal) / KCAL_PER_G_FAT },
+    carb: { minG: ((macro.carbPctMin / 100) * einKcal) / KCAL_PER_G_CARB, maxG: ((macro.carbPctMax / 100) * einKcal) / KCAL_PER_G_CARB },
+  };
+}
+
+// Fixed hues for the four macro bands — kept apart from Eᵢₙ/BMR's
+// accent/ink-soft above them in the same subplot, and from the other three
+// subplots' own accent colors, since all four can be on screen together.
+const MACRO_BAND_COLORS = {
+  protein: '#b91c1c', fiber: '#15803d', fat: '#b5680a', carb: '#7c3aed',
+};
+const MACRO_BAND_ORDER = ['protein', 'fiber', 'fat', 'carb'];
+const MACRO_BAND_LABELS = {
+  protein: 'P_min–P_max (desired daily protein)',
+  fiber: 'F_min–F_max (desired daily dietary fiber)',
+  fat: 'G_min–G_max (desired daily fat)',
+  carb: 'C_min–C_max (desired daily carbohydrate)',
+};
 
 // Reads the sheet's OWN already-computed fields — m̄, m_g, t, the arrival
 // date — rather than re-deriving a solve-for-mode-specific result, so the
@@ -1461,33 +1474,22 @@ function readMassTrajectoryInputs() {
     return null;
   }
 
+  const curve = readMaintenanceCoefficients();
+  const totalDays = tTotal + MAINTENANCE_EXTENSION_DAYS;
+
   if (formulaJourneyIsProportional()) {
     const weeklyPct = formulaNumber('formula-weekly-loss-pct');
     if (weeklyPct === null || weeklyPct <= 0) return null;
     return {
-      m0, mg, heightCm, etaIso, tTotal, mode: 'pct', weeklyPct,
+      m0, mg, heightCm, etaIso, tTotal, totalDays, mode: 'pct', weeklyPct, curve,
     };
   }
 
-  const einKcal = formulaNumber('formula-ein');
-  const age = formulaNumber('formula-age');
-  const sex = document.getElementById('formula-sex').value;
-  const met = formulaNumber('formula-met');
-  const tau = formulaNumber('formula-activity-min');
-  const kappa = formulaNumber('formula-met-o2');
-  const tefPct = formulaNumber('formula-tef-pct');
-  const formula = currentBmrFormula();
-  if (einKcal === null || met === null || tau === null || kappa === null || tefPct === null) return null;
-  if (formula !== 'katch' && age === null) return null;
-
-  const { a, b } = maintenanceAffineCoefficients({
-    heightCm, age: age ?? 0, sex, met, tau, kappa, formula, tef: tefPct,
-  });
-  if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) return null;
-  const equilibriumKg = (einKcal - a) / b;
+  if (!curve || curve.coefficients.b === 0) return null;
+  const equilibriumKg = (curve.einKcal - curve.coefficients.a) / curve.coefficients.b;
 
   return {
-    m0, mg, heightCm, etaIso, tTotal, mode: 'intake', equilibriumKg, b,
+    m0, mg, heightCm, etaIso, tTotal, totalDays, mode: 'intake', equilibriumKg, b: curve.coefficients.b, curve,
   };
 }
 
@@ -1495,10 +1497,10 @@ function readMassTrajectoryInputs() {
 // survives the next re-render (every input change rebuilds the chart from
 // scratch, so this can't live as local state inside the render function).
 const massTrajectoryLayerVisible = {
-  trend: true, bmiband: true, swing: true, today: true, goal: true,
+  trend: true, bmiband: true, swing: true, today: true, desire: true,
 };
 
-// A 5-pointed star centered at (cx, cy) — used for the Goal marker so it
+// A 5-pointed star centered at (cx, cy) — used for the Desire marker so it
 // reads as a distinct shape from the Today circle, not just a second dot.
 function starPathD(cx, cy, outerR, innerR) {
   const points = [];
@@ -1526,13 +1528,13 @@ function renderMassTrajectoryChart() {
     return;
   }
 
-  const { m0, mg, heightCm, etaIso, tTotal } = inputs;
+  const { m0, mg, heightCm, etaIso, tTotal, totalDays } = inputs;
   const toBmi = (kg) => kg / ((heightCm / 100) ** 2);
 
   const steps = 40;
   const points = [];
   for (let i = 0; i <= steps; i += 1) {
-    const t = (tTotal * i) / steps;
+    const t = (totalDays * i) / steps;
     points.push({ t, mass: massTrajectoryAtDay(inputs, t) });
   }
 
@@ -1552,7 +1554,7 @@ function renderMassTrajectoryChart() {
   const plotW = width - marginLeft - marginRight;
   const plotH = height - marginTop - marginBottom;
 
-  const xAt = (t) => marginLeft + (plotW * t) / tTotal;
+  const xAt = (t) => marginLeft + (plotW * t) / totalDays;
   const yAt = (mass) => marginTop + plotH - (plotH * (mass - yMin)) / (yMax - yMin);
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.mass).toFixed(1)}`).join(' ');
@@ -1567,14 +1569,7 @@ function renderMassTrajectoryChart() {
   const startDate = new Date();
   const endDate = parseIsoDateUTC(etaIso);
   const fmtDate = (date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  const xTickCount = Math.min(5, Math.max(2, Math.round(tTotal / 14)));
-  const xTicks = [];
-  for (let i = 0; i <= xTickCount; i += 1) {
-    const t = (tTotal * i) / xTickCount;
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + Math.round(t));
-    xTicks.push({ t, label: fmtDate(date) });
-  }
+  const xTicks = dateAxisTicks(totalDays, startDate);
 
   // The WHO healthy-BMI band (18.5-24.9), converted to this profile's mass —
   // same conversion as the right axis, shown as a shaded reference zone
@@ -1625,6 +1620,10 @@ function renderMassTrajectoryChart() {
   svgParts.push(`<text x="${marginLeft}" y="12" font-size="10.5" font-weight="600" fill="var(--ink-faint)">kg</text>`);
   svgParts.push(`<text x="${width - marginRight}" y="12" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink-faint)">kg/m²</text>`);
 
+  // The arrival boundary — everything past it is the maintenance tail, held
+  // flat at m_g with the deficit gone, not more of the same decay.
+  svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${marginTop}" x2="${xAt(tTotal).toFixed(1)}" y2="${height - marginBottom}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
+
   // The glycogen + water swing (ΔM_gly) as a band straddling the curve — the
   // day-to-day scale noise it alone can account for, not real fat-mass change.
   const swingKg = formulaNumber('formula-glycogen-swing');
@@ -1641,15 +1640,15 @@ function renderMassTrajectoryChart() {
     svgParts.push(`<path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"></path>`);
   }
 
-  // Today — a circle — and Goal — a star — are distinct shapes as well as
+  // Today — a circle — and Desire — a star — are distinct shapes as well as
   // distinct legend entries, so the two remain tellable apart without color.
   if (massTrajectoryLayerVisible.today) {
     svgParts.push(`<circle cx="${xAt(0).toFixed(1)}" cy="${yAt(m0).toFixed(1)}" r="4.5" fill="var(--bg-alt)" stroke="var(--accent)" stroke-width="2.5"></circle>`);
     svgParts.push(`<text x="${xAt(0).toFixed(1)}" y="${(yAt(m0) - 12).toFixed(1)}" text-anchor="start" font-size="11" font-weight="600" fill="var(--ink)">Today · ${m0} kg</text>`);
   }
-  if (massTrajectoryLayerVisible.goal) {
+  if (massTrajectoryLayerVisible.desire) {
     svgParts.push(`<path d="${starPathD(xAt(tTotal), yAt(mg), 7, 3)}" fill="var(--accent)" stroke="var(--bg-alt)" stroke-width="1.5"></path>`);
-    svgParts.push(`<text x="${xAt(tTotal).toFixed(1)}" y="${(yAt(mg) - 12).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="var(--ink)">Goal · ${mg} kg</text>`);
+    svgParts.push(`<text x="${xAt(tTotal).toFixed(1)}" y="${(yAt(mg) - 12).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="var(--ink)">Desire · ${mg} kg</text>`);
   }
 
   svgParts.push('<g class="mtc-hover" style="display:none">'
@@ -1665,12 +1664,12 @@ function renderMassTrajectoryChart() {
   // Each item is clickable — it toggles that layer's entry in
   // massTrajectoryLayerVisible and re-renders, same as any other input here.
   const legendItems = [
-    { key: 'trend', color: 'var(--accent)', label: 'Body mass trajectory', shape: 'line' },
-    { key: 'today', color: 'var(--accent)', label: `Today · ${m0} kg`, shape: 'circle' },
-    { key: 'goal', color: 'var(--accent)', label: `Goal · ${mg} kg`, shape: 'star' },
+    { key: 'trend', color: 'var(--accent)', label: 'm (body mass)', shape: 'line' },
+    { key: 'today', color: 'var(--accent)', label: `m̄ (7-day rolling average body mass) ${m0} kg`, shape: 'circle' },
+    { key: 'desire', color: 'var(--accent)', label: `m_g (healthy body mass) ${mg} kg`, shape: 'star' },
   ];
-  if (bandVisible) legendItems.push({ key: 'bmiband', color: 'var(--teal)', label: 'Healthy BMI band (18.5–24.9)', shape: 'swatch' });
-  if (swingKg !== null && swingKg > 0) legendItems.push({ key: 'swing', color: 'var(--amber)', label: `Glycogen + water swing (±${(swingKg / 2).toFixed(1)} kg)`, shape: 'swatch' });
+  if (bandVisible) legendItems.push({ key: 'bmiband', color: 'var(--teal)', label: 'BMI_g (healthy body mass index) 18.5–24.9 kg/m²', shape: 'swatch' });
+  if (swingKg !== null && swingKg > 0) legendItems.push({ key: 'swing', color: 'var(--amber)', label: `ΔM_gly (glycogen + water swing) ±${(swingKg / 2).toFixed(1)} kg`, shape: 'swatch' });
   const legendMarkup = (item) => {
     if (item.shape === 'circle') return `<svg class="mtc-legend-mark" viewBox="0 0 14 14"><circle cx="7" cy="7" r="4" fill="var(--bg-alt)" stroke="${item.color}" stroke-width="2.2"></circle></svg>`;
     if (item.shape === 'star') return `<svg class="mtc-legend-mark" viewBox="0 0 14 14"><path d="${starPathD(7, 7, 6, 2.6)}" fill="${item.color}"></path></svg>`;
@@ -1689,36 +1688,505 @@ function renderMassTrajectoryChart() {
     });
   });
 
-  const svg = el.querySelector('svg');
-  const hoverGroup = el.querySelector('.mtc-hover');
-  const hoverLine = el.querySelector('.mtc-hover-line');
-  const hoverDot = el.querySelector('.mtc-hover-dot');
-  const tooltip = el.querySelector('.mtc-tooltip');
-
-  const showAtClientX = (clientX) => {
-    const rect = svg.getBoundingClientRect();
-    const svgX = ((clientX - rect.left) / rect.width) * width;
-    const t = Math.min(tTotal, Math.max(0, ((svgX - marginLeft) / plotW) * tTotal));
+  registerSubplotHover('mass-trajectory-chart', (rawT) => {
+    const t = Math.min(totalDays, Math.max(0, rawT));
     const mass = massTrajectoryAtDay(inputs, t);
-    const x = xAt(t);
-    const y = yAt(mass);
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + Math.round(t));
+    const lines = [fmtDate(date), `m (body mass) ${mass.toFixed(1)} kg`, `BMI (body mass index) ${toBmi(mass).toFixed(1)} kg/m²`];
+    if (t > tTotal) lines.push('(maintenance tail, past arrival)');
+    return { x: xAt(t), y: yAt(mass), text: lines.join('\n') };
+  });
+
+  const svg = el.querySelector('svg');
+  svg.addEventListener('mousemove', (event) => {
+    const rect = svg.getBoundingClientRect();
+    const svgX = ((event.clientX - rect.left) / rect.width) * width;
+    const t = ((svgX - marginLeft) / plotW) * totalDays;
+    broadcastSubplotHover(t);
+  });
+  svg.addEventListener('mouseleave', hideAllSubplotHovers);
+}
+
+// Date ticks for the three subplots below the mass chart — same tick-count
+// rule as the mass chart's own x-axis, so a day lines up at the same pixel
+// column in every subplot.
+// The calendar date at day t, formatted the same way the mass chart's own
+// x-axis and tooltip already format it — shared so every subplot's hover
+// leads with the same date line.
+function dayDateLabel(t) {
+  const date = new Date();
+  date.setDate(date.getDate() + Math.round(t));
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function dateAxisTicks(tTotal, startDate = new Date()) {
+  const fmtDate = (date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const xTickCount = Math.min(5, Math.max(2, Math.round(tTotal / 14)));
+  const xTicks = [];
+  for (let i = 0; i <= xTickCount; i += 1) {
+    const t = (tTotal * i) / xTickCount;
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + Math.round(t));
+    xTicks.push({ t, label: fmtDate(date) });
+  }
+  return xTicks;
+}
+
+// A linked cursor across all four panels of Fig. 1: hovering any one of them
+// broadcasts the day to every panel's own updater, so each draws its OWN
+// crosshair/tooltip for that same date — a shared x position read across
+// four different y series, rather than four independent hovers.
+const SUBPLOT_HOVER_IDS = ['mass-trajectory-chart', 'balance-chart', 'calories-intake-chart', 'activity-chart'];
+const subplotHoverUpdaters = {};
+
+// Registers (or replaces, on re-render) chart `id`'s updater — given a day
+// t, returns where its OWN crosshair/dot/tooltip belong. Kept per-id rather
+// than per-DOM-node since each render() replaces its container's innerHTML,
+// invalidating any node reference taken before this call.
+function registerSubplotHover(id, sampleAtDay) {
+  subplotHoverUpdaters[id] = sampleAtDay;
+}
+
+function broadcastSubplotHover(t) {
+  SUBPLOT_HOVER_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    const updater = subplotHoverUpdaters[id];
+    if (!el || !updater) return;
+    const hoverGroup = el.querySelector('.mtc-hover');
+    const hoverLine = el.querySelector('.mtc-hover-line');
+    const hoverDot = el.querySelector('.mtc-hover-dot');
+    const tooltip = el.querySelector('.mtc-tooltip');
+    if (!hoverGroup) return;
+    const { x, y, text } = updater(t);
     hoverLine.setAttribute('x1', x.toFixed(1));
     hoverLine.setAttribute('x2', x.toFixed(1));
     hoverDot.setAttribute('cx', x.toFixed(1));
     hoverDot.setAttribute('cy', y.toFixed(1));
     hoverGroup.style.display = '';
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + Math.round(t));
     tooltip.hidden = false;
-    tooltip.textContent = `${fmtDate(date)} — ${mass.toFixed(1)} kg, BMI ${toBmi(mass).toFixed(1)}`;
-    const pctX = Math.min(88, Math.max(0, (x / width) * 100));
-    tooltip.style.left = `${pctX}%`;
+    tooltip.textContent = text;
+    // Anchored from whichever side has room, rather than always positioned
+    // via `left` + a transform: a browser sizes an auto-width absolutely
+    // positioned box using the space between its set side and the far edge
+    // of its container, regardless of any transform — so a box pinned near
+    // the right edge via `left: 95%` gets squeezed into that last 5% and
+    // THEN translated, it doesn't get to be full-size first. Anchoring from
+    // `right` instead when we're on the right side gives it the whole
+    // container to size against.
+    const pct = Math.max(0, Math.min(100, (x / SUBPLOT_WIDTH) * 100));
+    tooltip.style.transform = 'none';
+    if (pct > 65) {
+      tooltip.style.left = 'auto';
+      tooltip.style.right = `${(100 - pct).toFixed(2)}%`;
+    } else if (pct < 35) {
+      tooltip.style.left = `${pct.toFixed(2)}%`;
+      tooltip.style.right = 'auto';
+    } else {
+      tooltip.style.left = `${pct.toFixed(2)}%`;
+      tooltip.style.right = 'auto';
+      tooltip.style.transform = 'translateX(-50%)';
+    }
+  });
+}
+
+function hideAllSubplotHovers() {
+  SUBPLOT_HOVER_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const hoverGroup = el.querySelector('.mtc-hover');
+    const tooltip = el.querySelector('.mtc-tooltip');
+    if (hoverGroup) hoverGroup.style.display = 'none';
+    if (tooltip) tooltip.hidden = true;
+  });
+}
+
+// Shared crosshair/tooltip wiring for the three subplot SVGs below the mass
+// chart — registers this panel's own updater, then broadcasts whatever day
+// the mouse is over to every panel via broadcastSubplotHover.
+function attachSubplotHover(el, { xAt, plotW, marginLeft, tTotal, sample }) {
+  const svg = el.querySelector('svg');
+  if (!svg) return;
+
+  registerSubplotHover(el.id, (t) => {
+    const clamped = Math.min(tTotal, Math.max(0, t));
+    const { y, text } = sample(clamped);
+    return { x: xAt(clamped), y, text };
+  });
+
+  svg.addEventListener('mousemove', (event) => {
+    const rect = svg.getBoundingClientRect();
+    const width = svg.viewBox.baseVal.width;
+    const svgX = ((event.clientX - rect.left) / rect.width) * width;
+    const t = ((svgX - marginLeft) / plotW) * tTotal;
+    broadcastSubplotHover(t);
+  });
+  svg.addEventListener('mouseleave', hideAllSubplotHovers);
+}
+
+// Common frame (gridlines, axis spines, date ticks) shared by the three
+// kcal-scale subplots below the mass chart. Margins match the mass chart's
+// own margins exactly, so every subplot's day-0 and day-t columns fall on
+// the same pixel x as the chart above it.
+const SUBPLOT_WIDTH = 680;
+const SUBPLOT_HEIGHT = 200;
+const SUBPLOT_MARGIN_LEFT = 46;
+const SUBPLOT_MARGIN_RIGHT = 46;
+const SUBPLOT_MARGIN_TOP = 16;
+const SUBPLOT_MARGIN_BOTTOM = 34;
+
+function subplotFrameSvgParts({
+  tTotal, yMin, yMax, yUnitLabel, xAt, yAt,
+}) {
+  const parts = [];
+  const yTickCount = 4;
+  for (let i = 0; i <= yTickCount; i += 1) {
+    const v = yMin + ((yMax - yMin) * i) / yTickCount;
+    const y = yAt(v);
+    parts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${y.toFixed(1)}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"></line>`);
+    parts.push(`<text x="${SUBPLOT_MARGIN_LEFT - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--ink-faint)">${Math.round(v)}</text>`);
+  }
+  dateAxisTicks(tTotal).forEach(({ t, label }) => {
+    const x = xAt(t);
+    parts.push(`<line x1="${x.toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${x.toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--line)" stroke-width="1"></line>`);
+    parts.push(`<text x="${x.toFixed(1)}" y="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM + 18}" text-anchor="middle" font-size="10.5" fill="var(--ink-faint)">${label}</text>`);
+  });
+  parts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${SUBPLOT_MARGIN_TOP}" x2="${SUBPLOT_MARGIN_LEFT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
+  parts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
+  parts.push(`<text x="${SUBPLOT_MARGIN_LEFT}" y="12" font-size="10.5" font-weight="600" fill="var(--ink-faint)">${yUnitLabel}</text>`);
+  return parts;
+}
+
+function subplotHoverSvgParts(dotColor) {
+  return '<g class="mtc-hover" style="display:none">'
+    + `<line class="mtc-hover-line" y1="${SUBPLOT_MARGIN_TOP}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="3 3"></line>`
+    + `<circle class="mtc-hover-dot" r="4" fill="${dotColor}"></circle>`
+    + '</g>';
+}
+
+function legendLineMark(color, dashed) {
+  return `<svg class="mtc-legend-mark" viewBox="0 0 14 14"><line x1="1" y1="7" x2="13" y2="7" stroke="${color}" stroke-width="2.2"${dashed ? ' stroke-dasharray="3 2"' : ''} stroke-linecap="round"></line></svg>`;
+}
+
+// Which layer of the balance subplot is toggled on — same pattern as
+// massTrajectoryLayerVisible above.
+const balanceLayerVisible = {
+  deficit: true, maintenance: true, intake: true, tef: true, sleep: true,
+};
+
+// Subplot (b): the daily energy balance (deficit/surplus) that drives the
+// mass curve above, decomposed into maintenance, intake, digestion (TEF),
+// and the sleep-deprivation penalty already computed elsewhere on the sheet
+// — recomputed at each day's own mass, since maintenance falls as mass does.
+function renderBalanceChart() {
+  const el = document.getElementById('balance-chart');
+  const inputs = readMassTrajectoryInputs();
+  if (!inputs || !inputs.curve) { el.innerHTML = ''; return; }
+
+  const { tTotal, totalDays, mg, curve } = inputs;
+  const { einKcal, coefficients, sleepDeprivationKcal } = curve;
+  const divisor = coefficients.tefDivisor;
+  // Past arrival, Eᵢₙ steps up to whatever holds mass at m_g exactly — the
+  // zero-deficit intake at the desire mass — rather than staying at the
+  // deficit-bearing value that got the trajectory there.
+  const maintenanceEin = maintenanceKcalAtMass(coefficients, mg) / divisor;
+
+  const steps = 40;
+  const points = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = (totalDays * i) / steps;
+    const einAtT = t > tTotal ? maintenanceEin : einKcal;
+    const maintenance = maintenanceKcalAtMass(coefficients, massTrajectoryAtDay(inputs, t));
+    points.push({
+      t, maintenance, einAtT, tefAtT: einAtT * (1 - divisor), deficit: maintenance - einAtT * divisor,
+    });
+  }
+
+  const values = [
+    ...points.map((p) => p.maintenance), ...points.map((p) => p.deficit), ...points.map((p) => p.einAtT), 0,
+    ...(sleepDeprivationKcal > 0 ? [sleepDeprivationKcal] : []),
+  ];
+  const valMin = Math.min(...values);
+  const valMax = Math.max(...values);
+  const pad = Math.max((valMax - valMin) * 0.15, 20);
+  const yMin = valMin - pad;
+  const yMax = valMax + pad;
+
+  const plotW = SUBPLOT_WIDTH - SUBPLOT_MARGIN_LEFT - SUBPLOT_MARGIN_RIGHT;
+  const plotH = SUBPLOT_HEIGHT - SUBPLOT_MARGIN_TOP - SUBPLOT_MARGIN_BOTTOM;
+  const xAt = (t) => SUBPLOT_MARGIN_LEFT + (plotW * t) / totalDays;
+  const yAt = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * (v - yMin)) / (yMax - yMin);
+  const lineD = (key) => points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p[key]).toFixed(1)}`).join(' ');
+
+  const svgParts = [`<svg viewBox="0 0 ${SUBPLOT_WIDTH} ${SUBPLOT_HEIGHT}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Daily energy balance over the trajectory and the maintenance tail after arrival">`];
+
+  if (yMin < 0 && yMax > 0) {
+    svgParts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${yAt(0).toFixed(1)}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${yAt(0).toFixed(1)}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 3"></line>`);
+  }
+  svgParts.push(...subplotFrameSvgParts({
+    tTotal: totalDays, yMin, yMax, yUnitLabel: 'kcal/day', xAt, yAt,
+  }));
+  if (yMin < 0 && yMax > 0) {
+    svgParts.push(`<text x="${SUBPLOT_MARGIN_LEFT - 8}" y="${(yAt(0) + 3).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--ink-faint)">0</text>`);
+  }
+  svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${xAt(tTotal).toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
+
+  if (balanceLayerVisible.intake) svgParts.push(`<path d="${lineD('einAtT')}" fill="none" stroke="var(--accent)" stroke-width="2"></path>`);
+  if (balanceLayerVisible.tef) svgParts.push(`<path d="${lineD('tefAtT')}" fill="none" stroke="var(--amber)" stroke-width="2"></path>`);
+  if (sleepDeprivationKcal > 0 && balanceLayerVisible.sleep) svgParts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${yAt(sleepDeprivationKcal).toFixed(1)}" x2="${xAt(tTotal).toFixed(1)}" y2="${yAt(sleepDeprivationKcal).toFixed(1)}" stroke="var(--teal)" stroke-width="2" stroke-dasharray="4 3"></line>`);
+  if (balanceLayerVisible.maintenance) svgParts.push(`<path d="${lineD('maintenance')}" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="5 3"></path>`);
+  if (balanceLayerVisible.deficit) svgParts.push(`<path d="${lineD('deficit')}" fill="none" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round"></path>`);
+
+  svgParts.push(subplotHoverSvgParts('var(--danger)'), '</svg>', '<div class="mtc-tooltip" hidden></div>');
+
+  const legendItems = [
+    { key: 'deficit', color: 'var(--danger)', label: 'D (daily energy deficit)' },
+    { key: 'maintenance', color: 'var(--ink-soft)', label: 'M (maintenance at m̄ — BMR + Eₐ)', dashed: true },
+    { key: 'intake', color: 'var(--accent)', label: 'Eᵢₙ (desired daily intake)' },
+    { key: 'tef', color: 'var(--amber)', label: 'TEF (energy spent digesting that intake)' },
+  ];
+  if (sleepDeprivationKcal > 0) legendItems.push({ key: 'sleep', color: 'var(--teal)', label: 'δ (Sleep Deprivation Effect)', dashed: true });
+  svgParts.push(`<div class="mtc-legend">${legendItems.map((item) => `<button type="button" class="mtc-legend-item${balanceLayerVisible[item.key] ? '' : ' mtc-legend-item-off'}" data-layer="${item.key}">${legendLineMark(item.color, item.dashed)}${item.label}</button>`).join('')}</div>`);
+
+  el.innerHTML = svgParts.join('');
+  el.querySelectorAll('.mtc-legend-item').forEach((button) => {
+    button.addEventListener('click', () => {
+      balanceLayerVisible[button.dataset.layer] = !balanceLayerVisible[button.dataset.layer];
+      renderBalanceChart();
+    });
+  });
+
+  attachSubplotHover(el, {
+    xAt, plotW, marginLeft: SUBPLOT_MARGIN_LEFT, tTotal: totalDays,
+    sample: (t) => {
+      const maintenance = maintenanceKcalAtMass(coefficients, massTrajectoryAtDay(inputs, t));
+      const einAtT = t > tTotal ? maintenanceEin : einKcal;
+      const deficit = maintenance - einAtT * divisor;
+      const lines = [
+        dayDateLabel(t),
+        `D (daily energy ${deficit >= 0 ? 'deficit' : 'surplus'}) ${Math.abs(Math.round(deficit))} kcal/day`,
+        `M (maintenance at m̄ — BMR + Eₐ) ${Math.round(maintenance)} kcal/day`,
+        `Eᵢₙ (desired daily intake) ${Math.round(einAtT)} kcal/day`,
+        `TEF (energy spent digesting that intake) ${Math.round(einAtT * (1 - divisor))} kcal/day`,
+      ];
+      if (sleepDeprivationKcal > 0 && t <= tTotal) lines.push(`δ (Sleep Deprivation Effect) +${Math.round(sleepDeprivationKcal)} kcal/day`);
+      if (t > tTotal) lines.push('(maintenance tail, past arrival)');
+      return { y: yAt(deficit), text: lines.join('\n') };
+    },
+  });
+}
+
+// Which layer of the calories-intake subplot is toggled on.
+const intakeLayerVisible = {
+  ein: true, bmr: true, protein: true, fiber: true, fat: true, carb: true,
+};
+
+// Subplot (c): Eᵢₙ, the sheet's own desired-daily-intake field, against BMR,
+// the sheet's own resting-metabolic-rate field (left axis, kcal/day) — the
+// same two numbers printed above, so day 0 here reads exactly like
+// formula-ein/formula-bmr. Stacked on the right axis (g/day), the four §1.5
+// dietary bands, protein at the bottom then fiber, fat and carbohydrate —
+// each drawn as a solid floor (its min) under a lighter ceiling (its max),
+// stacked on the previous layer's max so bands never overlap.
+function renderCaloriesIntakeChart() {
+  const el = document.getElementById('calories-intake-chart');
+  const inputs = readMassTrajectoryInputs();
+  if (!inputs || !inputs.curve) { el.innerHTML = ''; return; }
+
+  const { tTotal, totalDays, mg, curve } = inputs;
+  const { aBmr, bBmr } = curve.coefficients;
+  const einKcal = curve.einKcal;
+  const maintenanceEin = maintenanceKcalAtMass(curve.coefficients, mg) / curve.coefficients.tefDivisor;
+  const macroCoeffs = readMacroBandCoefficients();
+
+  const steps = 40;
+  const points = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = (totalDays * i) / steps;
+    const mass = massTrajectoryAtDay(inputs, t);
+    const einAtT = t > tTotal ? maintenanceEin : einKcal;
+    const point = { t, bmr: aBmr + bBmr * mass, einAtT };
+    if (macroCoeffs) {
+      const bands = macroBandsAtMass(macroCoeffs, mass, einAtT);
+      let base = 0;
+      point.layers = {};
+      MACRO_BAND_ORDER.forEach((key) => {
+        const { minG, maxG } = bands[key];
+        point.layers[key] = { base, minTop: base + minG, maxTop: base + maxG };
+        base += maxG;
+      });
+      point.stackTop = base;
+    }
+    points.push(point);
+  }
+
+  const values = [...points.map((p) => p.bmr), ...points.map((p) => p.einAtT)];
+  const valMax = Math.max(...values);
+  const yMin = 0;
+  const yMax = valMax * 1.15;
+  const gramsMax = macroCoeffs ? Math.max(...points.map((p) => p.stackTop)) * 1.08 : 0;
+
+  const plotW = SUBPLOT_WIDTH - SUBPLOT_MARGIN_LEFT - SUBPLOT_MARGIN_RIGHT;
+  const plotH = SUBPLOT_HEIGHT - SUBPLOT_MARGIN_TOP - SUBPLOT_MARGIN_BOTTOM;
+  const xAt = (t) => SUBPLOT_MARGIN_LEFT + (plotW * t) / totalDays;
+  const yAt = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * (v - yMin)) / (yMax - yMin);
+  const yAtGrams = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * v) / gramsMax;
+  const bmrPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.bmr).toFixed(1)}`).join(' ');
+  const einPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.einAtT).toFixed(1)}`).join(' ');
+  const macroBandPath = (key, lowField, highField) => {
+    const top = points.map((p) => `${xAt(p.t).toFixed(1)},${yAtGrams(p.layers[key][highField]).toFixed(1)}`);
+    const bottom = points.slice().reverse().map((p) => `${xAt(p.t).toFixed(1)},${yAtGrams(p.layers[key][lowField]).toFixed(1)}`);
+    return `M ${top.join(' L ')} L ${bottom.join(' L ')} Z`;
   };
 
-  svg.addEventListener('mousemove', (event) => showAtClientX(event.clientX));
-  svg.addEventListener('mouseleave', () => {
-    hoverGroup.style.display = 'none';
-    tooltip.hidden = true;
+  const svgParts = [`<svg viewBox="0 0 ${SUBPLOT_WIDTH} ${SUBPLOT_HEIGHT}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Desired daily intake against resting metabolic rate, with the protein, dietary fiber, fat and carbohydrate bands stacked on the right axis">`];
+  svgParts.push(...subplotFrameSvgParts({
+    tTotal: totalDays, yMin, yMax, yUnitLabel: 'kcal/day', xAt, yAt,
+  }));
+  svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${xAt(tTotal).toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
+
+  if (macroCoeffs) {
+    MACRO_BAND_ORDER.forEach((key) => {
+      if (!intakeLayerVisible[key]) return;
+      const color = MACRO_BAND_COLORS[key];
+      svgParts.push(`<path d="${macroBandPath(key, 'base', 'minTop')}" fill="${color}" fill-opacity="0.55" stroke="none"></path>`);
+      svgParts.push(`<path d="${macroBandPath(key, 'minTop', 'maxTop')}" fill="${color}" fill-opacity="0.22" stroke="none"></path>`);
+    });
+    for (let i = 0; i <= 4; i += 1) {
+      const v = (gramsMax * i) / 4;
+      const y = yAtGrams(v);
+      svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT + 8}" y="${(y + 3).toFixed(1)}" text-anchor="start" font-size="10.5" fill="var(--ink-faint)">${Math.round(v)}</text>`);
+    }
+    svgParts.push(`<line x1="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y1="${SUBPLOT_MARGIN_TOP}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
+    svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y="12" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink-faint)">g/day</text>`);
+  }
+
+  if (intakeLayerVisible.bmr) svgParts.push(`<path d="${bmrPathD}" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="5 3"></path>`);
+  if (intakeLayerVisible.ein) svgParts.push(`<path d="${einPathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"></path>`);
+
+  svgParts.push(subplotHoverSvgParts('var(--accent)'), '</svg>', '<div class="mtc-tooltip" hidden></div>');
+
+  const legendItems = [
+    { key: 'ein', color: 'var(--accent)', label: 'Eᵢₙ (desired daily intake)', line: true },
+    { key: 'bmr', color: 'var(--ink-soft)', label: 'BMR (resting metabolic rate, at m̄)', line: true, dashed: true },
+  ];
+  if (macroCoeffs) MACRO_BAND_ORDER.forEach((key) => legendItems.push({ key, color: MACRO_BAND_COLORS[key], label: MACRO_BAND_LABELS[key] }));
+  svgParts.push(`<div class="mtc-legend">${legendItems.map((item) => `<button type="button" class="mtc-legend-item${intakeLayerVisible[item.key] ? '' : ' mtc-legend-item-off'}" data-layer="${item.key}">${item.line ? legendLineMark(item.color, item.dashed) : `<span class="mtc-legend-swatch" style="background:${item.color}"></span>`}${item.label}</button>`).join('')}</div>`);
+
+  el.innerHTML = svgParts.join('');
+  el.querySelectorAll('.mtc-legend-item').forEach((button) => {
+    button.addEventListener('click', () => {
+      intakeLayerVisible[button.dataset.layer] = !intakeLayerVisible[button.dataset.layer];
+      renderCaloriesIntakeChart();
+    });
+  });
+
+  attachSubplotHover(el, {
+    xAt, plotW, marginLeft: SUBPLOT_MARGIN_LEFT, tTotal: totalDays,
+    sample: (t) => {
+      const mass = massTrajectoryAtDay(inputs, t);
+      const bmr = aBmr + bBmr * mass;
+      const einAtT = t > tTotal ? maintenanceEin : einKcal;
+      const lines = [
+        dayDateLabel(t),
+        `Eᵢₙ (desired daily intake) ${Math.round(einAtT)} kcal/day`,
+        `BMR (resting metabolic rate, at m̄) ${Math.round(bmr)} kcal/day`,
+      ];
+      if (macroCoeffs) {
+        const bands = macroBandsAtMass(macroCoeffs, mass, einAtT);
+        MACRO_BAND_ORDER.forEach((key) => {
+          if (!intakeLayerVisible[key]) return;
+          lines.push(`${MACRO_BAND_LABELS[key]} ${Math.round(bands[key].minG)}–${Math.round(bands[key].maxG)} g/day`);
+        });
+      }
+      if (t > tTotal) lines.push('(maintenance tail, past arrival)');
+      return { y: yAt(bmr), text: lines.join('\n') };
+    },
+  });
+}
+
+// Which layer of the activity subplot is toggled on.
+const activityLayerVisible = { kcal: true, minutes: true };
+
+// Subplot (d): activity energy expenditure — left axis kcal/day, falling as
+// the trajectory's mass falls (same MET and minutes, less mass to move);
+// right axis the fixed activity-minutes target itself, τ, drawn as a flat
+// reference since the plan's duration doesn't change, only what it costs.
+function renderActivityChart() {
+  const el = document.getElementById('activity-chart');
+  const inputs = readMassTrajectoryInputs();
+  if (!inputs || !inputs.curve) { el.innerHTML = ''; return; }
+
+  const { tTotal, totalDays, curve } = inputs;
+  const { coefficients, tau } = curve;
+
+  const steps = 40;
+  const points = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = (totalDays * i) / steps;
+    points.push({ t, kcal: coefficients.activityPerKg * massTrajectoryAtDay(inputs, t) });
+  }
+
+  const kcalMax = Math.max(...points.map((p) => p.kcal));
+  const yMin = 0;
+  const yMax = kcalMax * 1.15;
+  // The right (minutes) axis has its own, independent scale — τ centred in
+  // it — since minutes and calories aren't linearly tied the way mass and
+  // BMI are in the chart above.
+  const minutesYMin = 0;
+  const minutesYMax = tau * 2;
+
+  const plotW = SUBPLOT_WIDTH - SUBPLOT_MARGIN_LEFT - SUBPLOT_MARGIN_RIGHT;
+  const plotH = SUBPLOT_HEIGHT - SUBPLOT_MARGIN_TOP - SUBPLOT_MARGIN_BOTTOM;
+  const xAt = (t) => SUBPLOT_MARGIN_LEFT + (plotW * t) / totalDays;
+  const yAt = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * (v - yMin)) / (yMax - yMin);
+  const yAtMinutes = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * (v - minutesYMin)) / (minutesYMax - minutesYMin);
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.kcal).toFixed(1)}`).join(' ');
+
+  const svgParts = [`<svg viewBox="0 0 ${SUBPLOT_WIDTH} ${SUBPLOT_HEIGHT}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Activity calories burned over the trajectory, against the fixed activity-minutes target">`];
+  svgParts.push(...subplotFrameSvgParts({
+    tTotal: totalDays, yMin, yMax, yUnitLabel: 'kcal', xAt, yAt,
+  }));
+  svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${xAt(tTotal).toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
+
+  // Right-axis (minutes) ticks, at the same rows as the left axis, labelled
+  // off the minutes scale rather than the kcal one.
+  for (let i = 0; i <= 4; i += 1) {
+    const v = minutesYMin + ((minutesYMax - minutesYMin) * i) / 4;
+    const y = yAtMinutes(v);
+    svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT + 8}" y="${(y + 3).toFixed(1)}" text-anchor="start" font-size="10.5" fill="var(--ink-faint)">${Math.round(v)}</text>`);
+  }
+  svgParts.push(`<line x1="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y1="${SUBPLOT_MARGIN_TOP}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
+  svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y="12" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink-faint)">min</text>`);
+
+  if (activityLayerVisible.minutes) svgParts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${yAtMinutes(tau).toFixed(1)}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${yAtMinutes(tau).toFixed(1)}" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4 3"></line>`);
+  if (activityLayerVisible.kcal) svgParts.push(`<path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"></path>`);
+
+  svgParts.push(subplotHoverSvgParts('var(--accent)'), '</svg>', '<div class="mtc-tooltip" hidden></div>');
+
+  const legendItems = [
+    { key: 'kcal', color: 'var(--accent)', label: 'Eₐ (daily desired activity burn)' },
+    { key: 'minutes', color: 'var(--amber)', label: 'τ (Activity time)', dashed: true },
+  ];
+  svgParts.push(`<div class="mtc-legend">${legendItems.map((item) => `<button type="button" class="mtc-legend-item${activityLayerVisible[item.key] ? '' : ' mtc-legend-item-off'}" data-layer="${item.key}">${legendLineMark(item.color, item.dashed)}${item.label}</button>`).join('')}</div>`);
+
+  el.innerHTML = svgParts.join('');
+  el.querySelectorAll('.mtc-legend-item').forEach((button) => {
+    button.addEventListener('click', () => {
+      activityLayerVisible[button.dataset.layer] = !activityLayerVisible[button.dataset.layer];
+      renderActivityChart();
+    });
+  });
+
+  attachSubplotHover(el, {
+    xAt, plotW, marginLeft: SUBPLOT_MARGIN_LEFT, tTotal: totalDays,
+    sample: (t) => {
+      const mass = massTrajectoryAtDay(inputs, t);
+      const kcal = coefficients.activityPerKg * mass;
+      const lines = [dayDateLabel(t), `Eₐ (daily desired activity burn) ${Math.round(kcal)} kcal/day`, `τ (Activity time) ${Math.round(tau)} min/day`];
+      if (t > tTotal) lines.push('(maintenance tail, past arrival)');
+      return { y: yAt(kcal), text: lines.join('\n') };
+    },
   });
 }
 
@@ -2046,291 +2514,6 @@ function loadDefaultInputs() {
 }
 
 function initSheet() {
-  const exprEl = document.getElementById('formula-expression');
-  exprEl.textContent = '';
-  exprEl.appendChild(buildFormulaExpressionNodes(FORMULA_EXPRESSION));
-
-  // eqn-1 (m̄, the smoothing formula) is authored first so numbering starts at
-  // (1), but it's displayed up by the 1.2 Human State Variable prose rather
-  // than at the top of the main equation block — moved after numbering so
-  // every other equation keeps its number unchanged. Its heading line is
-  // dropped rather than moved along with it: the 1.2 prose already covers it.
-  const eqn1Slot = document.getElementById('eqn-1-slot');
-  const eqn1Row = document.getElementById('eqn-1');
-  if (eqn1Slot && eqn1Row) {
-    const eqn1Heading = eqn1Row.previousElementSibling;
-    if (eqn1Heading && eqn1Heading.classList.contains('eqn-heading')) eqn1Heading.remove();
-    eqn1Slot.appendChild(eqn1Row);
-  }
-
-  // Same reasoning for the Boer heading above eqn-2/eqn-3: the 1.3 Human
-  // Lean Body Mass prose already covers it.
-  const eqn2Row = document.getElementById('eqn-2');
-  if (eqn2Row) {
-    const eqn2Heading = eqn2Row.previousElementSibling;
-    if (eqn2Heading && eqn2Heading.classList.contains('eqn-heading')) eqn2Heading.remove();
-  }
-
-  // 1.4 Resting Metabolic Rate — introduces eqn-4 (Katch-McArdle) and eqn-5
-  // (Mifflin-St Jeor), inserted right above the Katch-McArdle heading inside
-  // the equation block, i.e. between the LBM equations and these two.
-  const eqn4Row = document.getElementById('eqn-4');
-  if (eqn4Row) {
-    const eqn4Heading = eqn4Row.previousElementSibling;
-    const anchor = (eqn4Heading && eqn4Heading.classList.contains('eqn-heading')) ? eqn4Heading : eqn4Row;
-
-    // 1.2 Energy Balance Components — umbrella over the six subsections
-    // below (1.2.1-1.2.6), inserted right before the first of them.
-    const umbrella = document.createElement('div');
-    umbrella.className = 'eqn-section';
-    umbrella.innerHTML = `
-      <h3 id="sec-1-2">Energy Balance Components</h3>
-      <p>The following six subsections build up the daily energy balance itself — resting and activity expenditure, the sleep and food-related corrections to it, the weekly rate it has to sustain, and the daily intake that identity solves for.</p>
-    `;
-    anchor.parentNode.insertBefore(umbrella, anchor);
-
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h4 id="sec-1-2-1">Resting Metabolic Rate</h4>
-      <p id="eqn4-intro">The Katch-McArdle equation predicts resting metabolic rate directly from lean body mass rather than from age and sex, reflecting that metabolically active tissue — not fat mass — drives resting energy expenditure <a href="#ref-2">[2]</a>, as given in <a href="#eqn-4">eqn. (4)</a>.</p>
-      <p>The Mifflin-St Jeor equation instead predicts resting metabolic rate from body mass, height, age, and sex, and was derived by regression on indirect-calorimetry measurements from 498 healthy adults <a href="#ref-3">[3]</a>, as given in <a href="#eqn-5">eqn. (5)</a>; it serves as the model's default resting-metabolic-rate formula.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    // eqn-4's row moves up to sit right below the paragraph that introduces it,
-    // same treatment eqn-1 got with the 1.2 prose.
-    section.querySelector('#eqn4-intro').after(eqn4Row);
-    // Both the Katch-McArdle and Mifflin-St Jeor headings are dropped: the 1.4
-    // prose above already covers what each equation is.
-    if (eqn4Heading && eqn4Heading.classList.contains('eqn-heading')) eqn4Heading.remove();
-    const eqn5Row = document.getElementById('eqn-5');
-    if (eqn5Row) {
-      const eqn5Heading = eqn5Row.previousElementSibling;
-      if (eqn5Heading && eqn5Heading.classList.contains('eqn-heading')) eqn5Heading.remove();
-    }
-  }
-
-  // 1.5 Activity Burn — replaces the "Activity burn at the daily target —
-  // ACSM metabolic equation" heading above eqn-6 with a proper subsection.
-  const eqn6Row = document.getElementById('eqn-6');
-  if (eqn6Row) {
-    const eqn6Heading = eqn6Row.previousElementSibling;
-    const anchor = (eqn6Heading && eqn6Heading.classList.contains('eqn-heading')) ? eqn6Heading : eqn6Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h4 id="sec-1-2-2">Activity Burn</h4>
-      <p>Activity burn quantifies the additional energy expended by scheduled physical activity, computed from metabolic equivalents (MET), body mass, activity duration (τ), oxygen uptake per MET (κ), and the oxygen energy yield (ε), following the generalized metabolic equations of the American College of Sports Medicine <a href="#ref-4">[4]</a>, as given in <a href="#eqn-6">eqn. (6)</a>.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn6Heading && eqn6Heading.classList.contains('eqn-heading')) eqn6Heading.remove();
-  }
-
-  // 1.6 Sleep Deprivation Effect — replaces the "Sleep Efficiency Factor —
-  // reduction in fat-loss efficiency per hour of sleep debt" heading above
-  // eqn-7 with a proper subsection.
-  const eqn7Row = document.getElementById('eqn-7');
-  if (eqn7Row) {
-    const eqn7Heading = eqn7Row.previousElementSibling;
-    const anchor = (eqn7Heading && eqn7Heading.classList.contains('eqn-heading')) ? eqn7Heading : eqn7Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h4 id="sec-1-2-3">Sleep Deprivation Effect</h4>
-      <p>Insufficient sleep has been shown to reduce fat loss and increase lean-mass loss during caloric restriction <a href="#ref-5">[5]</a>, so a given energy deficit yields less fat loss on a short night than on a full one. The Sleep Efficiency Factor η captures this reduction as a function of the sleep deprivation rate (γ), the assumed desire sleep (s_desire), and actual sleep length (s), as given in <a href="#eqn-7">eqn. (7)</a>.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn7Heading && eqn7Heading.classList.contains('eqn-heading')) eqn7Heading.remove();
-  }
-
-  // 1.7 Weekly Fat Loss Rate — replaces the "Weekly fat loss as a share of
-  // body mass — 0.5-1%/week band" heading above eqn-8 with a proper subsection.
-  const eqn8Row = document.getElementById('eqn-8');
-  if (eqn8Row) {
-    const eqn8Heading = eqn8Row.previousElementSibling;
-    const anchor = (eqn8Heading && eqn8Heading.classList.contains('eqn-heading')) ? eqn8Heading : eqn8Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h4 id="sec-1-2-4">Weekly Fat Loss Rate</h4>
-      <p>A weekly body-mass loss of 0.5–1% is the range associated with preserving lean mass and strength during caloric restriction in trained individuals, whereas faster loss increasingly comes at the expense of lean tissue <a href="#ref-6">[6]</a>. This share of body mass is defined in <a href="#eqn-8">eqn. (8)</a>. There, Δm is the desire weekly fat loss in kilograms, and Δm% expresses that loss as a percentage of the current body mass m̄. The corresponding daily energy deficit D is then obtained by converting that weekly fat loss into a daily figure via the fat energy density ρ, adjusted by the Sleep Efficiency Factor η, as given in <a href="#eqn-9">eqn. (9)</a>.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn8Heading && eqn8Heading.classList.contains('eqn-heading')) eqn8Heading.remove();
-  }
-
-  // Drop the heading above eqn-9 outright — no replacement subsection asked for.
-  const eqn9Row = document.getElementById('eqn-9');
-  if (eqn9Row) {
-    const eqn9Heading = eqn9Row.previousElementSibling;
-    if (eqn9Heading && eqn9Heading.classList.contains('eqn-heading')) eqn9Heading.remove();
-  }
-
-  // 1.8 Thermic Effect of Food — replaces the "Thermic effect of food — a
-  // share of the very intake being solved for" heading above eqn-10.
-  const eqn10Row = document.getElementById('eqn-10');
-  if (eqn10Row) {
-    const eqn10Heading = eqn10Row.previousElementSibling;
-    const anchor = (eqn10Heading && eqn10Heading.classList.contains('eqn-heading')) ? eqn10Heading : eqn10Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h4 id="sec-1-2-5">Thermic Effect of Food</h4>
-      <p>Digesting, absorbing, and metabolizing food itself consumes energy — the thermic effect of food (TEF) — typically amounting to 5–15% of daily energy expenditure on a mixed diet, with protein eliciting the largest effect per calorie <a href="#ref-7">[7]</a>. The thermic cost differs by macronutrient — commonly cited figures put protein near 20–30% of its own calories, carbohydrate near 5–10%, and fat near 0–3% <a href="#ref-7">[7]</a> — but here TEF is modeled as a single fixed share f of the desire daily intake (Eᵢₙ, <a href="#sec-1-2-6">introduced below</a>) rather than a macronutrient-weighted sum, as given in <a href="#eqn-10">eqn. (10)</a>, and is folded into the intake identity by solving rather than by simple addition.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn10Heading && eqn10Heading.classList.contains('eqn-heading')) eqn10Heading.remove();
-  }
-
-  // 1.9 Target Daily Intake — replaces the "Target daily intake — TEF folded
-  // in by solving, not by adding" heading above eqn-11.
-  const eqn11Row = document.getElementById('eqn-11');
-  if (eqn11Row) {
-    const eqn11Heading = eqn11Row.previousElementSibling;
-    const anchor = (eqn11Heading && eqn11Heading.classList.contains('eqn-heading')) ? eqn11Heading : eqn11Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h4 id="sec-1-2-6">Desire Daily Intake</h4>
-      <p>The desire daily intake Eᵢₙ is the calorie level that, net of the thermic effect of food, still leaves the desired deficit D on top of maintenance (BMR + Eₐ). Because TEF is itself a share of Eᵢₙ rather than a fixed amount, the identity is solved for Eᵢₙ directly — placing (1 − f) in the denominator — instead of treating TEF as a further subtraction, as given in <a href="#eqn-11">eqn. (11)</a>.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn11Heading && eqn11Heading.classList.contains('eqn-heading')) eqn11Heading.remove();
-  }
-
-  // 1.10 Target Body Mass Index — replaces the "The target body mass as a
-  // BMI — 18.5-24.9 healthy band" heading above eqn-12.
-  const eqn12Row = document.getElementById('eqn-12');
-  if (eqn12Row) {
-    const eqn12Heading = eqn12Row.previousElementSibling;
-    const anchor = (eqn12Heading && eqn12Heading.classList.contains('eqn-heading')) ? eqn12Heading : eqn12Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h4 id="sec-1-1-3">Healthy Human Body Mass Index</h4>
-      <p>The healthy body mass m_g can equivalently be expressed as a healthy body mass index, BMI_g, computed from m_g and height h. A BMI between 18.5 and 24.9 is the World Health Organization's healthy-weight band <a href="#ref-8">[8]</a>, and this figure is flagged when it falls outside that range. The relationship between m_g and BMI_g is given in <a href="#eqn-12">eqn. (12)</a>.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn12Heading && eqn12Heading.classList.contains('eqn-heading')) eqn12Heading.remove();
-
-    // Relocated into the Human Body Profile group (§1.1), sitting right after
-    // the Body Mass State Variable subsection and ahead of the Lean Body
-    // Mass Parameter one — moves both the prose and its equation (12)
-    // together.
-    const lbmHeading = document.getElementById('sec-1-1-4');
-    if (lbmHeading) {
-      lbmHeading.parentNode.insertBefore(section, lbmHeading);
-      lbmHeading.parentNode.insertBefore(eqn12Row, lbmHeading);
-    }
-  }
-
-  // 1.11 Maintenance and Mass Trajectory — replaces the four headings spread
-  // across eqn-13 through eqn-21 (maintenance coefficients, equilibrium mass,
-  // exponential decay, and the proportional-journey alternative) with one
-  // subsection covering the whole block.
-  const eqn13Row = document.getElementById('eqn-13');
-  if (eqn13Row) {
-    const eqn13Heading = eqn13Row.previousElementSibling;
-    const anchor = (eqn13Heading && eqn13Heading.classList.contains('eqn-heading')) ? eqn13Heading : eqn13Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h3 id="sec-1-11">Maintenance and Mass Trajectory</h3>
-      <p>Maintenance energy expenditure M(m̄) = A + B×m̄ is affine in body mass under either resting-metabolic-rate formula, with the coefficients A and B given in <a href="#eqn-13">eqns. (13)</a>–<a href="#eqn-16">(16)</a>. Under Katch-McArdle, c_m, c_h, and c_0 are the same sex-specific Boer coefficients from <a href="#eqn-2">eqn. (2)</a>/<a href="#eqn-3">(3)</a> (0.407, 0.267, −19.2 for males; 0.252, 0.473, −48.3 for females), substituted in place of LBM so A and B stay linear in h alone. Holding intake Eᵢₙ fixed then drives body mass toward a single equilibrium m∞ = (Eᵢₙ − A)/B, as given in <a href="#eqn-17">eqn. (17)</a>, and mass approaches that equilibrium exponentially over the elapsed time t (in days) rather than linearly — the same first-order dynamics used to model human body-weight change under sustained energy imbalance <a href="#ref-9">[9]</a> — as given in <a href="#eqn-18">eqn. (18)</a>, with t to a healthy mass following from inverting that decay in <a href="#eqn-19">eqn. (19)</a>.</p>
-      <p>When a fixed weekly percentage of body mass Δm% is held instead of a fixed intake, the loop closes differently: mass is re-derived from itself every period rather than converging on an equilibrium, giving proportional decay with no plateau, as given in <a href="#eqn-20">eqns. (20)</a>–<a href="#eqn-21">(21)</a>.</p>
-      <p>Metabolic adaptation drags this trajectory further: sustained dieting lowers BMR faster than the lost mass alone explains, at a rate λ per week on the diet, capped at a ceiling λt_max reached by roughly week 10–12, as given in <a href="#eqn-22">eqn. (22)</a>. Scaling the BMR half of A and B by that same factor gives the adapted coefficients A_a and B_a, and therefore an adapted equilibrium m∞_a — sitting above the naively-computed m∞, which is the overshoot a constant-BMR forecast predicts — as given in <a href="#eqn-23">eqn. (23)</a>.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn13Heading && eqn13Heading.classList.contains('eqn-heading')) eqn13Heading.remove();
-
-    ['eqn-17', 'eqn-18', 'eqn-20', 'eqn-22'].forEach((id) => {
-      const row = document.getElementById(id);
-      if (!row) return;
-      const heading = row.previousElementSibling;
-      if (heading && heading.classList.contains('eqn-heading')) heading.remove();
-    });
-  }
-
-  // 1.12 Glycogen and Water Storage — replaces the three headings above
-  // eqn-24/25/26 with one subsection covering the whole block.
-  const eqn24Row = document.getElementById('eqn-24');
-  if (eqn24Row) {
-    const eqn24Heading = eqn24Row.previousElementSibling;
-    const anchor = (eqn24Heading && eqn24Heading.classList.contains('eqn-heading')) ? eqn24Heading : eqn24Row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = `
-      <h3 id="sec-1-12">Glycogen and Water Storage</h3>
-      <p>Skeletal muscle stores glycogen at a density g_musc of roughly 13–15 g per kg of wet muscle mass, and each gram of stored glycogen binds a further r ≈ 3–4 g of water — figures drawn from classic glycogen-depletion and -repletion studies <a href="#ref-10">[10]</a>. The muscle-tissue mass that actually holds glycogen is estimated from the skeletal-muscle share s of lean mass, as given in <a href="#eqn-24">eqn. (24)</a>; the resulting glycogen store, from that muscle mass at density g_musc plus a roughly constant liver reserve g_liver (≈ 100 g), is given in <a href="#eqn-25">eqn. (25)</a>; and the associated bound-water swing, scaled by r — the day-to-day scale movement glycogen and water can account for on their own, distinct from real fat-mass change — is given in <a href="#eqn-26">eqn. (26)</a>.</p>
-    `;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (eqn24Heading && eqn24Heading.classList.contains('eqn-heading')) eqn24Heading.remove();
-
-    ['eqn-25', 'eqn-26'].forEach((id) => {
-      const row = document.getElementById(id);
-      if (!row) return;
-      const heading = row.previousElementSibling;
-      if (heading && heading.classList.contains('eqn-heading')) heading.remove();
-    });
-  }
-
-  // A small helper for the remaining macro-band subsections (1.13-1.16),
-  // which all follow the same shape: one heading above one equation pair,
-  // replaced with one subsection.
-  function replaceHeadingWithSection(firstEqnId, html) {
-    const row = document.getElementById(firstEqnId);
-    if (!row) return;
-    const heading = row.previousElementSibling;
-    const anchor = (heading && heading.classList.contains('eqn-heading')) ? heading : row;
-    const section = document.createElement('div');
-    section.className = 'eqn-section';
-    section.innerHTML = html;
-    anchor.parentNode.insertBefore(section, anchor);
-    if (heading && heading.classList.contains('eqn-heading')) heading.remove();
-  }
-
-  // 1.13 Dietary Requirements — umbrella heading over the four macro bands
-  // below (1.13.1-1.13.4), inserted right before the first of them.
-  const eqn27Row = document.getElementById('eqn-27');
-  if (eqn27Row) {
-    const umbrellaAnchor = eqn27Row.previousElementSibling || eqn27Row;
-    const umbrella = document.createElement('div');
-    umbrella.className = 'eqn-section';
-    umbrella.innerHTML = `
-      <h3 id="sec-1-13">Dietary Requirements</h3>
-      <p>The remaining four bands — protein, fiber, fat, and carbohydrate — set healthy daily ranges for diet composition rather than for the size of the energy deficit itself, each scaled to lean mass or to intake, in the four subsections below.</p>
-    `;
-    umbrellaAnchor.parentNode.insertBefore(umbrella, umbrellaAnchor);
-  }
-
-  // 1.13.1 Protein Requirements — replaces "Daily protein band, scaled to
-  // lean mass" above eqn-27/28.
-  replaceHeadingWithSection('eqn-27', `
-    <h4 id="sec-1-13-1">Protein Requirements</h4>
-    <p>Protein needs for energy-restricted, resistance-trained individuals with low body fat are estimated at a floor p_min and ceiling p_max of 2.3–3.1 g per kg of fat-free (lean) mass per day, scaled upward with the severity of caloric restriction and leanness <a href="#ref-11">[11]</a>. The corresponding lower and upper healthy daily protein amounts, P_min and P_max, are given in <a href="#eqn-27">eqn. (27)</a> and <a href="#eqn-28">eqn. (28)</a>.</p>
-  `);
-
-  // 1.14 Fiber Requirements — replaces "Fiber band — a floor from daily
-  // intake, a ceiling from body weight" above eqn-29/30.
-  replaceHeadingWithSection('eqn-29', `
-    <h4 id="sec-1-13-2">Dietary Fiber Requirements</h4>
-    <p>Fiber intake is recommended relative to energy intake via a floor coefficient f_min of roughly 14 g per 1,000 kcal consumed, while a practical upper ceiling f_max is instead scaled to body weight, per the USDA Dietary Guidelines for Americans <a href="#ref-12">[12]</a>. These two different bases give the lower and upper healthy daily fiber amounts, F_min and F_max, in <a href="#eqn-29">eqn. (29)</a> and <a href="#eqn-30">eqn. (30)</a> respectively.</p>
-  `);
-
-  // 1.15 Fat Requirements — replaces "Fat band — both ends a share of
-  // intake, 20-35% AMDR" above eqn-31/32.
-  replaceHeadingWithSection('eqn-31', `
-    <h4 id="sec-1-13-3">Fat Requirements</h4>
-    <p>Fat intake is recommended within an Acceptable Macronutrient Distribution Range (AMDR) of 20–35% of total energy intake for adults <a href="#ref-13">[13]</a>, the floor and ceiling percentages denoted k_min and k_max. Converted to grams at fat's fixed energy density of 9 kcal/g, this range gives the lower and upper healthy daily fat amounts, G_min and G_max, in <a href="#eqn-31">eqn. (31)</a> and <a href="#eqn-32">eqn. (32)</a>.</p>
-  `);
-
-  // 1.16 Carbohydrate Requirements — replaces "Carb band — both ends a share
-  // of intake, 45-65% AMDR" above eqn-33/34.
-  replaceHeadingWithSection('eqn-33', `
-    <h4 id="sec-1-13-4">Carbohydrate Requirements</h4>
-    <p>Carbohydrate intake carries the same AMDR structure, recommended at 45–65% of total energy intake for adults <a href="#ref-13">[13]</a>, the floor and ceiling percentages denoted q_min and q_max. Converted to grams at carbohydrate's fixed energy density of 4 kcal/g, this range gives the lower and upper healthy daily carbohydrate amounts, C_min and C_max, in <a href="#eqn-33">eqn. (33)</a> and <a href="#eqn-34">eqn. (34)</a>.</p>
-  `);
-
   buildTableOfContents();
 
   document.querySelector('input[name="formula-solve-for"][value="EIN"]').checked = true;
@@ -2412,7 +2595,289 @@ function wireSheet() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function renderMarkdownInline(text) {
+  return text.replace(/\[([^\]\[]*)\]\(([^)]*)\)/g, (match, label, url) => `<a href="${url}">${label}</a>`);
+}
+
+// GitHub-style heading slug: lowercase, spaces to hyphens, strip anything
+// that isn't a letter/digit/hyphen. Every heading in this document has
+// unique text, so slugs never collide — which is what lets ids be computed
+// from the heading text instead of hand-typed in README.md. Add a new
+// subsection there and it gets a correct, unique id for free.
+function slugifyHeading(text) {
+  return text.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+}
+
+// Minimal BibTeX reader for the fenced ```bibtex block in README.md's
+// References section — that block is the source of truth (a real .bib file
+// a reader can paste straight into LaTeX), and the IEEE-formatted citations
+// on the page are rendered from it, never hand-typed. Scoped to the fields
+// the 13 entries here actually use; not a general BibTeX parser.
+function parseBibtex(text) {
+  const entries = [];
+  const entryRegex = /@(\w+)\s*\{\s*([^,]+),([\s\S]*?)\n\}/g;
+  let entryMatch;
+  while ((entryMatch = entryRegex.exec(text))) {
+    const [, type, key, body] = entryMatch;
+    const fields = {};
+    const fieldRegex = /(\w+)\s*=\s*\{([^}]*)\}/g;
+    let fieldMatch;
+    while ((fieldMatch = fieldRegex.exec(body))) {
+      fields[fieldMatch[1]] = fieldMatch[2].replace(/\\&/g, '&').replace(/--/g, '–').trim();
+    }
+    entries.push({ type: type.toLowerCase(), key, fields });
+  }
+  return entries;
+}
+
+// BibTeX's " and "-separated author list, in IEEE style: "A and B" for two,
+// "A, B, and C" for three or more. Only meant for a genuine list of person
+// names (the `author` field) — an `institution` field is a single
+// organization name and is used verbatim, since an org's own name can
+// legitimately contain the word "and" (e.g. "Health and Human Services").
+function formatAuthorList(author) {
+  const names = author.split(' and ');
+  if (names.length <= 2) return author;
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
+}
+
+// Renders one parsed BibTeX entry as an IEEE-style reference string —
+// covering the three entry types this bibliography actually contains
+// (article, book, techreport).
+function formatIeeeReference(entry, number) {
+  const f = entry.fields;
+  const doiClause = f.doi
+    ? `, doi: <a href="https://doi.org/${f.doi}" target="_blank" rel="noopener">${f.doi}</a>`
+    : '';
+
+  if (entry.type === 'article') {
+    const parts = [`vol. ${f.volume}`];
+    if (f.number) parts.push(`no. ${f.number}`);
+    parts.push(f.articleno ? `art. no. ${f.articleno}` : `pp. ${f.pages}`);
+    return `[${number}] ${formatAuthorList(f.author)}, "${f.title}," <i>${f.journal}</i>, ${parts.join(', ')}, ${f.year}${doiClause}.`;
+  }
+
+  if (entry.type === 'book') {
+    const authorStr = f.author ? formatAuthorList(f.author) : f.institution;
+    const editionStr = f.edition ? `, ${f.edition} ed` : '';
+    const publisherStr = f.publisher ? `: ${f.publisher}` : '';
+    return `[${number}] ${authorStr}, <i>${f.title}</i>${editionStr}. ${f.address}${publisherStr}, ${f.year}.`;
+  }
+
+  if (entry.type === 'techreport') {
+    const bits = [f.type, f.number, f.address].filter(Boolean);
+    return `[${number}] ${f.institution}, "${f.title}," ${bits.join(', ')}, ${f.year}.`;
+  }
+
+  return `[${number}] ${f.author || f.institution}, "${f.title}," ${f.year}.`;
+}
+
+// Index of the '{' at openIndex's own matching '}', accounting for further
+// {}-nesting in between (e.g. a subscript inside a \frac numerator).
+function findMatchingBrace(text, openIndex) {
+  let depth = 0;
+  for (let j = openIndex; j < text.length; j += 1) {
+    if (text[j] === '{') depth += 1;
+    else if (text[j] === '}') {
+      depth -= 1;
+      if (depth === 0) return j;
+    }
+  }
+  return text.length - 1;
+}
+
+// Minimal LaTeX-flavored math renderer for equation lines: x_{sub} becomes a
+// real <sub>, x^{sup} a real <sup>, and \frac{a}{b} a stacked fraction — not
+// a general LaTeX engine, just the handful of constructs the equations in
+// README.md actually use. \frac is extracted with explicit brace-matching
+// rather than a single regex, since its numerator or denominator can itself
+// contain a {}-delimited subscript or superscript (e.g. \frac{m_{g}}{...}) —
+// a plain [^{}]* group would stop at that inner brace. The _{...}/^{...}
+// pass then runs once over the whole result, reaching those nested ones too.
+function renderEquationMath(text) {
+  let result = '';
+  let i = 0;
+  while (i < text.length) {
+    if (text.startsWith('\\frac{', i)) {
+      const numOpen = i + 5;
+      const numClose = findMatchingBrace(text, numOpen);
+      if (text[numClose + 1] === '{') {
+        const denOpen = numClose + 1;
+        const denClose = findMatchingBrace(text, denOpen);
+        const num = text.slice(numOpen + 1, numClose);
+        const den = text.slice(denOpen + 1, denClose);
+        result += `<span class="eqn-frac"><span class="eqn-frac-num">${num}</span><span class="eqn-frac-den">${den}</span></span>`;
+        i = denClose + 1;
+        continue;
+      }
+    }
+    result += text[i];
+    i += 1;
+  }
+  result = result.replace(/_\{([^{}]*)\}/g, (match, sub) => `<sub>${sub}</sub>`);
+  result = result.replace(/\^\{([^{}]*)\}/g, (match, sup) => `<sup>${sup}</sup>`);
+  return result;
+}
+
+// A tiny Markdown-to-HTML converter for README.md, scoped to exactly what the
+// text sections need: ATX headings (## / ### / ####, id auto-derived from
+// the heading text via slugifyHeading — never typed in the source),
+// [label](url) links, blank-line-separated paragraphs, a fenced ```bibtex
+// block (the References section) rendered via parseBibtex/
+// formatIeeeReference above, and 4-space-indented equation lines (see
+// renderReadmeEquations below). Deliberately doesn't touch * or _ as
+// emphasis markers in prose — both appear as literal characters inside
+// variable names like m_g and P_min throughout this content. Inline HTML
+// (<i>, <a target="_blank">) inside a paragraph is passed through as-is,
+// same as any Markdown renderer would.
+function renderReadmeMarkdown(markdown) {
+  const lines = markdown.split('\n');
+
+  // Pass 1: number every equation by document order and record that number
+  // against its {#eqn_label} — a permanent key, independent of position,
+  // that \eqref{eqn_label} in prose resolves against. Add, remove, or
+  // reorder equations and every number updates itself; no label, and no
+  // \eqref using it, ever needs to change. Citation numbers get the same
+  // treatment, keyed by the BibTeX entry's own key (e.g. ref_iom2005)
+  // instead of a label, since that's already a permanent, unique handle.
+  const equationNumberByLabel = {};
+  let equationTotal = 0;
+  lines.forEach((rawLine) => {
+    if (/^ {4}\S/.test(rawLine)) {
+      equationTotal += 1;
+      const labelMatch = rawLine.match(/\{#([\w-]+)\}\s*$/);
+      if (labelMatch) equationNumberByLabel[labelMatch[1]] = equationTotal;
+    }
+  });
+
+  const citationNumberByKey = {};
+  {
+    const bibtexStart = lines.findIndex((l) => l.trim() === '```bibtex');
+    if (bibtexStart !== -1) {
+      const bibtexLines = [];
+      for (let j = bibtexStart + 1; j < lines.length && lines[j].trim() !== '```'; j += 1) {
+        bibtexLines.push(lines[j]);
+      }
+      parseBibtex(bibtexLines.join('\n')).forEach((entry, index) => {
+        citationNumberByKey[entry.key] = index + 1;
+      });
+    }
+  }
+
+  function resolveRefs(text) {
+    return text
+      .replace(/\\eqref\{([\w-]+)\}/g, (match, label) => {
+        const num = equationNumberByLabel[label];
+        return num ? `<a href="#${label}">(${num})</a>` : match;
+      })
+      .replace(/\\cite\{([\w-]+)\}/g, (match, key) => {
+        const num = citationNumberByKey[key];
+        return num ? `<a href="#${key}">[${num}]</a>` : match;
+      });
+  }
+
+  const htmlParts = [];
+  let paragraphLines = [];
+  let equationCount = 0;
+
+  function flushParagraph() {
+    if (paragraphLines.length === 0) return;
+    const text = renderMarkdownInline(resolveRefs(paragraphLines.join(' ').trim()));
+    if (text) htmlParts.push(`<p>${text}</p>`);
+    paragraphLines = [];
+  }
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const rawLine = lines[i];
+
+    // Equation block: one or more consecutive 4-space-indented lines, each
+    // optionally ending in {#label}. Numbered purely by position (matching
+    // the pass-1 count above) and anchored at that label, or at eqn-N when a
+    // line has none.
+    if (/^ {4}\S/.test(rawLine)) {
+      flushParagraph();
+      const rows = [];
+      while (i < lines.length && /^ {4}\S/.test(lines[i])) {
+        equationCount += 1;
+        const trimmed = lines[i].trim();
+        const labelMatch = trimmed.match(/\{#([\w-]+)\}\s*$/);
+        const id = labelMatch ? labelMatch[1] : `eqn-${equationCount}`;
+        const body = trimmed.replace(/\s*\{#[\w-]+\}\s*$/, '');
+        rows.push(`<div class="eqn-row" id="${id}"><span class="eqn-body">${renderEquationMath(body)}</span><a class="eqn-num" href="#${id}">(${equationCount})</a></div>`);
+        i += 1;
+      }
+      i -= 1;
+      htmlParts.push(`<div class="formula-expression"><div class="eqn-scroll">${rows.join('')}</div></div>`);
+      continue;
+    }
+
+    const line = rawLine.trim();
+
+    if (line.startsWith('```')) {
+      flushParagraph();
+      const language = line.slice(3).trim();
+      const blockLines = [];
+      i += 1;
+      while (i < lines.length && lines[i].trim() !== '```') {
+        blockLines.push(lines[i]);
+        i += 1;
+      }
+      if (language === 'bibtex') {
+        parseBibtex(blockLines.join('\n')).forEach((entry, index) => {
+          htmlParts.push(`<p class="ref-item" id="${entry.key}">${formatIeeeReference(entry, index + 1)}</p>`);
+        });
+      }
+      continue;
+    }
+
+    const headingMatch = line.match(/^(#{2,4})\s+(.*)$/);
+    if (headingMatch) {
+      flushParagraph();
+      const level = headingMatch[1].length;
+      const text = headingMatch[2].trim();
+      const id = slugifyHeading(text);
+      htmlParts.push(`<h${level} id="${id}">${renderMarkdownInline(resolveRefs(text))}</h${level}>`);
+      continue;
+    }
+
+    if (line === '') {
+      flushParagraph();
+      continue;
+    }
+
+    paragraphLines.push(line);
+  }
+  flushParagraph();
+  return htmlParts.join('\n');
+}
+
+// index.html ships only an empty #sheet-root. The text (README.md, authored
+// as Markdown, Sections 1 and 3) and the calculation UI
+// ("Interactive Calculation Sheet.html", Section 2) are fetched, the README
+// converted from Markdown, and both spliced together here, in that order,
+// before the existing init logic below — which finds everything by id
+// exactly as it did when it was static markup — runs and builds out the
+// citations, cross-references, and numbering.
+async function loadSheet() {
+  const sheetRoot = document.getElementById('sheet-root');
+  const [readmeMarkdown, sheetHtml] = await Promise.all([
+    fetch('README.md', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('Interactive Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
+  ]);
+
+  const readmeHtml = renderReadmeMarkdown(readmeMarkdown);
+  const readmeNodes = [...new DOMParser().parseFromString(readmeHtml, 'text/html').body.childNodes];
+  const sec3Index = readmeNodes.findIndex((node) => node.tagName === 'H2' && node.textContent.trim() === 'References');
+  const textNodes = sec3Index === -1 ? readmeNodes : readmeNodes.slice(0, sec3Index);
+  const referenceNodes = sec3Index === -1 ? [] : readmeNodes.slice(sec3Index);
+
+  textNodes.forEach((node) => sheetRoot.appendChild(document.importNode(node, true)));
+  sheetRoot.insertAdjacentHTML('beforeend', sheetHtml);
+  referenceNodes.forEach((node) => sheetRoot.appendChild(document.importNode(node, true)));
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSheet();
   wireSheet();
   initSheet();
   document.getElementById('footer-year').textContent = new Date().getFullYear();
