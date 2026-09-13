@@ -6,6 +6,8 @@
 
 \section{Human Metabolic System Diagram}
 
+The human metabolic system is a multi-input, single-output system: several inputs act simultaneously on a single output, the measured body mass m. Height, age, and sex (h, a, σ) are fixed parameters, whereas activity (τ, MET), food intake (Eᵢₙ), and sleep duration (s) are controllable inputs, each entering the Energy Balance through its own path. Driving m toward the healthy body mass m_d therefore requires regulating all controllable inputs together; an input left uncontrolled acts as an unregulated disturbance on D that the remaining inputs cannot reliably compensate for, and the output drifts from its desire.
+
 \input{1 Human Metabolic System Diagram}
 
 \section{Human Metabolic System Model}
@@ -29,11 +31,11 @@ m̄ = \frac{1}{7} × Σ m(t−i), \quad i = 0…6
 
 \subsubsection{Healthy Human Body Mass Index}
 
-The healthy body mass m_g can equivalently be expressed as a healthy body mass index, BMI_g, computed from m_g and height h. A BMI between 18.5 and 24.9 is the World Health Organization's healthy-weight band \cite{ref_who1995}, and this figure is flagged when it falls outside that range. The relationship between m_g and BMI_g is given in eqn.~\eqref{eqn_bmig}.
+The healthy body mass m_d can equivalently be expressed as a healthy body mass index, BMI_g, computed from m_d and height h. A BMI between 18.5 and 24.9 is the World Health Organization's healthy-weight band \cite{ref_who1995}, and this figure is flagged when it falls outside that range. The relationship between m_d and BMI_g is given in eqn.~\eqref{eqn_bmig}.
 
 \begin{equation}
 \label{eqn_bmig}
-BMI_{g} = \frac{m_{g}}{(h/100)^{2}}
+BMI_{g} = \frac{m_{d}}{(h/100)^{2}}
 \end{equation}
 
 \subsubsection{Human Lean Body Mass Parameter}
@@ -152,7 +154,7 @@ m̄(t) = m∞ + (m̄ − m∞) × e^{−B×t/ρ}
 \end{equation}
 \begin{equation}
 \label{eqn_tday}
-t = \frac{ρ}{B} × \ln\!\left[ \frac{m̄ − m∞}{m_{g} − m∞} \right]
+t = \frac{ρ}{B} × \ln\!\left[ \frac{m̄ − m∞}{m_{d} − m∞} \right]
 \end{equation}
 \begin{equation}
 \label{eqn_mprp}
@@ -160,7 +162,7 @@ m̄(t) = m̄ × (1 − Δm\%/100)^{t/7}
 \end{equation}
 \begin{equation}
 \label{eqn_tprp}
-t = \frac{7 × \ln(m̄ / m_{g})}{−\ln(1 − Δm\%/100)}
+t = \frac{7 × \ln(m̄ / m_{d})}{−\ln(1 − Δm\%/100)}
 \end{equation}
 \begin{equation}
 \label{eqn_ladp}

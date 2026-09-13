@@ -641,7 +641,7 @@ function readFormulaInputs() {
 // The formula with every symbol replaced by the figure actually used.
 //
 // Δm%, TEF and BMI_g are NOT read here: each sits inside `rows` itself, appended by the
-// mode that built it, at the spot the legend puts it (Δm% by D, TEF by Eᵢₙ, BMI_g by m_g),
+// mode that built it, at the spot the legend puts it (Δm% by D, TEF by Eᵢₙ, BMI_g by m_d),
 // rather than tacked on after everything mode-specific is done.
 function renderFormulaSubstituted(rows, plan = null) {
   const el = document.getElementById('formula-substituted');
@@ -1478,7 +1478,7 @@ const MACRO_BAND_LABELS = {
   carb: 'C_min–C_max (desired daily carbohydrate)',
 };
 
-// Reads the sheet's OWN already-computed fields — m̄, m_g, t, the arrival
+// Reads the sheet's OWN already-computed fields — m̄, m_d, t, the arrival
 // date — rather than re-deriving a solve-for-mode-specific result, so the
 // chart can never disagree with the numbers printed above it.
 function readMassTrajectoryInputs() {
@@ -1536,7 +1536,7 @@ function starPathD(cx, cy, outerR, innerR) {
   return `M ${points.join(' L ')} Z`;
 }
 
-// A small SVG line chart: body mass (left axis) from m̄ today to m_g on the
+// A small SVG line chart: body mass (left axis) from m̄ today to m_d on the
 // estimated arrival date, with BMI as a right-hand axis that is just that
 // same mass rescaled by the fixed (1/height²) factor — one physical
 // quantity in two units, not a second independent series.
@@ -1638,7 +1638,7 @@ function renderMassTrajectoryChart() {
   svgParts.push(`<text x="${width - marginRight}" y="12" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink-faint)">kg/m²</text>`);
 
   // The arrival boundary — everything past it is the maintenance tail, held
-  // flat at m_g with the deficit gone, not more of the same decay.
+  // flat at m_d with the deficit gone, not more of the same decay.
   svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${marginTop}" x2="${xAt(tTotal).toFixed(1)}" y2="${height - marginBottom}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
 
   // The glycogen + water swing (ΔM_gly) as a band straddling the curve — the
@@ -1652,7 +1652,7 @@ function renderMassTrajectoryChart() {
     svgParts.push(`<path d="${bandD}" fill="var(--amber)" fill-opacity="0.18" stroke="none"></path>`);
   }
 
-  // The mass curve itself, m̄ → m_g — just the line, no fill beneath it.
+  // The mass curve itself, m̄ → m_d — just the line, no fill beneath it.
   if (massTrajectoryLayerVisible.trend) {
     svgParts.push(`<path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"></path>`);
   }
@@ -1683,7 +1683,7 @@ function renderMassTrajectoryChart() {
   const legendItems = [
     { key: 'trend', color: 'var(--accent)', label: 'm (body mass)', shape: 'line' },
     { key: 'today', color: 'var(--accent)', label: `m̄ (7-day rolling average body mass) ${m0} kg`, shape: 'circle' },
-    { key: 'desire', color: 'var(--accent)', label: `m_g (healthy body mass) ${mg} kg`, shape: 'star' },
+    { key: 'desire', color: 'var(--accent)', label: `m_d (healthy body mass) ${mg} kg`, shape: 'star' },
   ];
   if (bandVisible) legendItems.push({ key: 'bmiband', color: 'var(--teal)', label: 'BMI_g (healthy body mass index) 18.5–24.9 kg/m²', shape: 'swatch' });
   if (swingKg !== null && swingKg > 0) legendItems.push({ key: 'swing', color: 'var(--amber)', label: `ΔM_gly (glycogen + water swing) ±${(swingKg / 2).toFixed(1)} kg`, shape: 'swatch' });
@@ -1914,7 +1914,7 @@ function renderBalanceChart() {
   const { tTotal, totalDays, mg, curve } = inputs;
   const { einKcal, coefficients, sleepDeprivationKcal } = curve;
   const divisor = coefficients.tefDivisor;
-  // Past arrival, Eᵢₙ steps up to whatever holds mass at m_g exactly — the
+  // Past arrival, Eᵢₙ steps up to whatever holds mass at m_d exactly — the
   // zero-deficit intake at the desire mass — rather than staying at the
   // deficit-bearing value that got the trajectory there.
   const maintenanceEin = maintenanceKcalAtMass(coefficients, mg) / divisor;
@@ -2450,7 +2450,7 @@ function renderFormulaPreviewCore() {
       ...renderTefField(),
       ...formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }),
       ['m∞', `(${Math.round(einKcal)} − ${Math.round(a)}) / ${bRounded}  =  ${eqRounded} kg`],
-      ['m_g', `${eqRounded} + (${bodyMassKg} − ${eqRounded}) × e^(−${bRounded}×${days}/7700)  =  ${mGRounded} kg`],
+      ['m_d', `${eqRounded} + (${bodyMassKg} − ${eqRounded}) × e^(−${bRounded}×${days}/7700)  =  ${mGRounded} kg`],
       ...renderTargetBmiField(),
       ...renderWeeklyLossPctField(),
     ], (() => {
@@ -2475,7 +2475,7 @@ function renderFormulaPreviewCore() {
   const { a, b } = coefficients;
   const activityKcal = withFormulaOverrides(preview, () => activityTargetKcal(bodyMassKg));
   const knownField = dualKnownField.DELTA_M;
-  // D is reverse-solved FROM Eᵢₙ or m_g in this mode (below), never built from a target
+  // D is reverse-solved FROM Eᵢₙ or m_d in this mode (below), never built from a target
   // rate — so, same as TARGET_MASS, there's no forward question for the sleep adjustment
   // to answer here; dashed rather than computed.
   renderSleepDeprivationField(null);
@@ -2748,7 +2748,7 @@ function findMatchingBrace(text, openIndex) {
 // a general LaTeX engine, just the handful of constructs the equations in
 // README.md actually use. \frac is extracted with explicit brace-matching
 // rather than a single regex, since its numerator or denominator can itself
-// contain a {}-delimited subscript or superscript (e.g. \frac{m_{g}}{...}) —
+// contain a {}-delimited subscript or superscript (e.g. \frac{m_{d}}{...}) —
 // a plain [^{}]* group would stop at that inner brace. The _{...}/^{...}
 // pass then runs once over the whole result, reaching those nested ones too.
 function renderEquationMath(text) {
@@ -2949,12 +2949,14 @@ async function loadSheet() {
   const modelHtml = renderReadmeLatex(texSource, citationNumberByKey);
   const modelNodes = [...new DOMParser().parseFromString(modelHtml, 'text/html').body.childNodes];
 
-  // The system diagram goes under its own "Human Metabolic System Diagram" section
-  // — the same spot the .tex \input{}s it — found by heading text, not position.
+  // The system diagram goes at the end of its own "Human Metabolic System Diagram"
+  // section, after the section's text — the same spot the .tex \input{}s it —
+  // found by heading text, not position.
   const overviewIndex = modelNodes.findIndex((node) => node.tagName === 'H2' && node.textContent.trim() === 'Human Metabolic System Diagram');
+  const nextSectionIndex = modelNodes.findIndex((node, i) => i > overviewIndex && node.tagName === 'H2');
   modelNodes.forEach((node, i) => {
+    if (overviewIndex >= 0 && i === nextSectionIndex) sheetRoot.insertAdjacentHTML('beforeend', systemDiagramHtml);
     sheetRoot.appendChild(document.importNode(node, true));
-    if (i === overviewIndex) sheetRoot.insertAdjacentHTML('beforeend', systemDiagramHtml);
   });
 
   sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(glossarySource, citationNumberByKey));
