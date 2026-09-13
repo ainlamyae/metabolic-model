@@ -613,6 +613,27 @@ ul.limits li b {
     border-radius: 4px;
 }
 
+/* \frac{a}{b} in an equation line, stacked like a real fraction bar rather
+   than rendered as "a/b" — see renderEquationMath in script.js. */
+.eqn-frac {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
+    line-height: 1.15;
+    margin: 0 .15em;
+}
+
+.eqn-frac-num,
+.eqn-frac-den {
+    white-space: nowrap;
+    padding: 0 .2em;
+}
+
+.eqn-frac-num {
+    border-bottom: 1px solid currentColor;
+}
+
 .formula-where {
     margin: 0 0 .6rem;
     font-size: .78rem;
@@ -872,9 +893,11 @@ ul.limits li b {
     background: var(--ink);
     color: var(--bg);
     font-size: 12px;
-    padding: 4px 8px;
+    line-height: 1.5;
+    padding: 4px 10px;
     border-radius: 6px;
-    white-space: nowrap;
+    white-space: pre-line;
+    text-align: left;
     pointer-events: none;
 }
 
@@ -923,6 +946,36 @@ ul.limits li b {
     width: 14px;
     height: 14px;
     flex: none;
+}
+
+.mtc-subplot-label {
+    margin: 6px 0 18px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-align: center;
+}
+
+.mtc-subplot {
+    position: relative;
+    margin: 0;
+}
+
+.mtc-subplot:empty,
+.mass-trajectory-chart:empty {
+    display: none;
+}
+
+.mtc-subplot:empty + .mtc-subplot-label,
+.mass-trajectory-chart:empty + .mtc-subplot-label {
+    display: none;
+}
+
+.mtc-subplot > svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    cursor: crosshair;
 }
 
 .formula-substituted p {
