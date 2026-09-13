@@ -1340,6 +1340,26 @@ function buildTableOfContents() {
   nav.appendChild(root);
 }
 
+// Below the wide-screen breakpoint the contents sidebar is a drawer: the
+// floating Contents button opens it; a link, the backdrop, or Escape closes it.
+function setupTableOfContentsDrawer() {
+  const sidebar = document.getElementById('toc-sidebar');
+  const toggle = document.querySelector('.toc-toggle');
+  const backdrop = document.querySelector('.toc-backdrop');
+  if (!sidebar || !toggle || !backdrop) return;
+
+  const setOpen = (open) => {
+    sidebar.classList.toggle('open', open);
+    backdrop.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+  };
+  toggle.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
+  backdrop.addEventListener('click', () => setOpen(false));
+  sidebar.addEventListener('click', (event) => { if (event.target.closest('a')) setOpen(false); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setOpen(false); });
+}
+setupTableOfContentsDrawer();
+
 // Samples the mass-over-time curve at day t: exponential decay to
 // equilibrium under a fixed intake, or proportional decay under a fixed
 // weekly percentage — the same two formulas eqns. (18) and (20) use.
@@ -1539,11 +1559,12 @@ function renderMassTrajectoryChart() {
   }
 
   const masses = points.map((p) => p.mass);
-  const massMin = Math.min(...masses, m0, mg);
   const massMax = Math.max(...masses, m0, mg);
-  const pad = Math.max((massMax - massMin) * 0.15, 0.5);
-  const yMin = massMin - pad;
-  const yMax = massMax + pad;
+  // The axis starts at 0 kg; the top is the next round multiple of the tick step.
+  const yMin = 0;
+  const yStep = [1, 2, 2.5, 5, 10].map((m) => m * 10 ** Math.floor(Math.log10(massMax / 8))).find((s) => massMax / s <= 8);
+  let yMax = Math.ceil(massMax / yStep) * yStep;
+  if (yMax - massMax < yStep * 0.1) yMax += yStep;
 
   const width = 680;
   const height = 260;
@@ -1559,12 +1580,8 @@ function renderMassTrajectoryChart() {
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.mass).toFixed(1)}`).join(' ');
 
-  const yTickCount = 8;
   const yTicks = [];
-  for (let i = 0; i <= yTickCount; i += 1) {
-    const mass = yMin + ((yMax - yMin) * i) / yTickCount;
-    yTicks.push(mass);
-  }
+  for (let mass = yMin; mass <= yMax + yStep / 2; mass += yStep) yTicks.push(mass);
 
   const startDate = new Date();
   const endDate = parseIsoDateUTC(etaIso);
@@ -1836,12 +1853,13 @@ const SUBPLOT_MARGIN_TOP = 16;
 const SUBPLOT_MARGIN_BOTTOM = 34;
 
 function subplotFrameSvgParts({
-  tTotal, yMin, yMax, yUnitLabel, xAt, yAt, rightUnitLabel, rightConvert,
+  tTotal, yMin, yMax, yUnitLabel, xAt, yAt, rightUnitLabel, rightConvert, yStep,
 }) {
   const parts = [];
-  const yTickCount = 4;
+  // With yStep, ticks sit on its round multiples; without, the range splits into 4.
+  const yTickCount = yStep ? Math.round((yMax - yMin) / yStep) : 4;
   for (let i = 0; i <= yTickCount; i += 1) {
-    const v = yMin + ((yMax - yMin) * i) / yTickCount;
+    const v = yStep ? yMin + yStep * i : yMin + ((yMax - yMin) * i) / yTickCount;
     const y = yAt(v);
     parts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${y.toFixed(1)}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"></line>`);
     parts.push(`<text x="${SUBPLOT_MARGIN_LEFT - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--ink-faint)">${Math.round(v)}</text>`);
@@ -1935,9 +1953,14 @@ function renderBalanceChart() {
   ];
   const valMin = Math.min(...values);
   const valMax = Math.max(...values);
-  const pad = Math.max((valMax - valMin) * 0.15, 20);
-  const yMin = valMin - pad;
-  const yMax = valMax + pad;
+  // Round, evenly spaced ticks: the smallest 1/2/2.5/5 × 10ⁿ step giving at most
+  // 6 intervals, with the limits on its multiples so 0 is always a tick.
+  const magnitude = 10 ** Math.floor(Math.log10(Math.max(valMax - valMin, 1) / 6));
+  const yStep = [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((s) => (valMax - valMin) / s <= 6);
+  let yMin = Math.floor(valMin / yStep) * yStep;
+  let yMax = Math.ceil(valMax / yStep) * yStep;
+  if (valMin - yMin < yStep * 0.1) yMin -= yStep;
+  if (yMax - valMax < yStep * 0.1) yMax += yStep;
 
   const plotW = SUBPLOT_WIDTH - SUBPLOT_MARGIN_LEFT - SUBPLOT_MARGIN_RIGHT;
   const plotH = SUBPLOT_HEIGHT - SUBPLOT_MARGIN_TOP - SUBPLOT_MARGIN_BOTTOM;
@@ -1959,11 +1982,8 @@ function renderBalanceChart() {
     yAt,
     rightUnitLabel: 'g fat',
     rightConvert: (v) => (v / KCAL_PER_G_FAT).toFixed(1),
+    yStep,
   }));
-  if (yMin < 0 && yMax > 0) {
-    svgParts.push(`<text x="${SUBPLOT_MARGIN_LEFT - 8}" y="${(yAt(0) + 3).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--ink-faint)">0</text>`);
-    svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT + 8}" y="${(yAt(0) + 3).toFixed(1)}" text-anchor="start" font-size="10.5" fill="var(--ink-faint)">0.0</text>`);
-  }
   svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${xAt(tTotal).toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
 
   if (balanceLayerVisible.intake) svgParts.push(`<path d="${lineD('einAtT')}" fill="none" stroke="var(--accent)" stroke-width="2"></path>`);
