@@ -10,18 +10,42 @@
 </head>
 <body>
 
-<div class="page">
-    <header class="page-header">
-        <h1>Metabolic Model</h1>
-    </header>
+<header class="hero">
+  <div class="wrap">
+    <h1>Metabolic Model</h1>
+    <nav class="toc" aria-label="Table of contents"></nav>
+  </div>
+</header>
 
+<main>
+
+  <section id="sheet-section">
+    <div class="wrap">
     <div class="sheet">
-        <pre id="formula-expression" class="formula-expression"></pre>
+        <h2 id="sec-1">Human Metabolic System Model</h2>
+
+        <h3 id="sec-1-1">Human Body Profile</h3>
+        <p>The following four subsections establish the physical profile — parameters, state variable, and the derived indices built from them — that the rest of the model reads from.</p>
+
+        <h4 id="sec-1-1-1">Human Anthropometric Parameters</h4>
+        <p>Height (h), age (a), and sex (σ) are the model's fixed anthropometric and demographic parameters — individual-specific quantities that do not evolve over the timescale of the energy-balance dynamics, and enter the equations as coefficients rather than as evolving quantities.</p>
+
+        <h4 id="sec-1-1-2">Human Body Mass State Variable</h4>
+        <p>Body mass (m) is the model's state variable — the one quantity that actually evolves over time, changing under the energy-balance feedback loop and, in turn, feeding back into that same loop the next day. Because a single day's reading of m fluctuates with water and glycogen rather than clean mass change, the model reads its 7-day rolling average, m̄ — <a href="#eqn-1">eqn. (1)</a> — instead.</p>
+
+        <div id="eqn-1-slot" class="formula-expression"></div>
+
+        <h4 id="sec-1-1-4">Human Lean Body Mass Parameter</h4>
+        <p>Lean body mass (LBM) is estimated from body mass, height, and sex by the Boer (1984) formula <a href="#ref-1">[1]</a>, applied sex-specifically — <a href="#eqn-2">eqn. (2)</a> for males, <a href="#eqn-3">eqn. (3)</a> for females.</p>
+
+        <div id="formula-expression" class="formula-expression"></div>
+
+        <h2 id="sec-2">Interactive Calculation Sheet</h2>
 
         <fieldset class="formula-solve-for">
             <legend>Solve for</legend>
             <label><input type="radio" name="formula-solve-for" value="EIN" checked> Calories</label>
-            <label><input type="radio" name="formula-solve-for" value="TARGET_MASS"> Target body mass</label>
+            <label><input type="radio" name="formula-solve-for" value="TARGET_MASS"> Healthy body mass</label>
             <label><input type="radio" name="formula-solve-for" value="TAU"> Activity</label>
             <label><input type="radio" name="formula-solve-for" value="DELTA_M"> Weekly fat loss</label>
             <label title="Hold the weekly fat loss at a percentage of your body mass. The kilograms per week, the calorie target and the arrival date are all computed from it — and the date follows the proportional journey, where the kilograms shrink as you do.">
@@ -40,8 +64,6 @@
                 Katch-McArdle (LBM)
             </label>
         </fieldset>
-
-        <p class="formula-where">where,</p>
 
         <div class="formula-inputs">
             <label class="formula-row" title="The mean of every weigh-in in the 7 days ending at your latest one — m̄(t) = (1/7) × Σ m(t−i). Water and glycogen move the scale by more than a week of fat loss does, and the decay model assumes clean mass, so every formula here reads this rather than a single day's reading.">
@@ -69,7 +91,19 @@
                     <option value="male">male</option>
                     <option value="female">female</option>
                 </select>
-                <span class="formula-unit">+5 ♂ / −161 ♀</span>
+                <span class="formula-unit"></span>
+            </label>
+            <label class="formula-row">
+                <span class="formula-sym">m_g</span>
+                <span class="formula-name">healthy body mass</span>
+                <input type="text" id="formula-target" inputmode="decimal">
+                <span class="formula-unit">kg</span>
+            </label>
+            <label class="formula-row" title="The BMI your target body mass comes to at your height — BMI = m_g / (h/100)². Type a target mass and this follows it; type a BMI here and the target mass follows instead. The healthy band is 18.5–24.9, and outside it the box goes red. In Solve for → Target body mass both are answers, so neither is typed.">
+                <span class="formula-sym">BMI_g</span>
+                <span class="formula-name">healthy body mass index</span>
+                <input type="text" id="formula-target-bmi" inputmode="decimal">
+                <span class="formula-unit">kg/m²</span>
             </label>
             <!-- Moved up from the protein block to sit with the rest of the profile it's
                  derived from (m̄, h, σ) and directly above BMR: under Katch-McArdle, BMR is
@@ -81,6 +115,7 @@
                 <input type="text" id="formula-lbm" inputmode="decimal" readonly>
                 <span class="formula-unit">kg</span>
             </label>
+            <hr class="formula-divider">
             <label class="formula-row" title="Resting metabolic rate at your smoothed body mass, from whichever equation is selected above — what you burn before any movement. Not editable: it is derived from m̄, h, a and σ.">
                 <span class="formula-sym">BMR</span>
                 <span class="formula-name">resting metabolic rate, at m̄</span>
@@ -92,7 +127,7 @@
             <hr class="formula-divider">
             <label class="formula-row">
                 <span class="formula-sym">τ</span>
-                <span class="formula-name">activity target</span>
+                <span class="formula-name">desired activity</span>
                 <input type="text" id="formula-activity-min" inputmode="decimal">
                 <span class="formula-unit">min/day</span>
             </label>
@@ -116,7 +151,7 @@
             </div>
             <label class="formula-row" title="Activity burn at that target: Eₐ = MET × m̄ × τ × κ / ε. Not editable: it is derived from MET, τ and κ above.">
                 <span class="formula-sym">Eₐ</span>
-                <span class="formula-name">activity burn at the daily target</span>
+                <span class="formula-name">daily desired activity burn</span>
                 <input type="text" id="formula-activity-kcal" inputmode="decimal" readonly>
                 <span class="formula-unit">kcal/day</span>
             </label>
@@ -178,7 +213,7 @@
                 <span class="formula-sym">f</span>
                 <span class="formula-name">thermic effect of food, as a share of Eᵢₙ</span>
                 <input type="text" id="formula-tef-pct" inputmode="decimal">
-                <span class="formula-unit">% of Eᵢₙ (≈10 typical)</span>
+                <span class="formula-unit">% of Eᵢₙ</span>
             </label>
             <label class="formula-row" title="What that share comes to in calories: TEF = f × Eᵢₙ. Zero while f is zero.">
                 <span class="formula-sym">TEF</span>
@@ -196,25 +231,13 @@
             </label>
             <label class="formula-row">
                 <span class="formula-sym">Eᵢₙ</span>
-                <span class="formula-name">target daily intake</span>
+                <span class="formula-name">desired daily intake</span>
                 <input type="text" id="formula-ein" inputmode="decimal">
                 <span class="formula-unit">kcal</span>
             </label>
             <!-- Marks the end of the calorie-solve block, Eᵢₙ, before the journey block
-                 (m_g, t, dates) starts below. -->
+                 (t, dates) starts below. -->
             <hr class="formula-divider" title="TEF is already built into Eᵢₙ above — the identity is solved with f in the denominator, not summed — so it is not a further deficit to subtract on top of it.">
-            <label class="formula-row">
-                <span class="formula-sym">m_g</span>
-                <span class="formula-name">target body mass</span>
-                <input type="text" id="formula-target" inputmode="decimal">
-                <span class="formula-unit">kg</span>
-            </label>
-            <label class="formula-row" title="The BMI your target body mass comes to at your height — BMI = m_g / (h/100)². Type a target mass and this follows it; type a BMI here and the target mass follows instead. The healthy band is 18.5–24.9, and outside it the box goes red. In Solve for → Target body mass both are answers, so neither is typed.">
-                <span class="formula-sym">BMI_g</span>
-                <span class="formula-name">target body mass index</span>
-                <input type="text" id="formula-target-bmi" inputmode="decimal">
-                <span class="formula-unit">kg/m²</span>
-            </label>
             <label class="formula-row">
                 <span class="formula-sym">t</span>
                 <span class="formula-name">days to m_g, holding Eᵢₙ daily</span>
@@ -313,13 +336,13 @@
             </label>
             <label class="formula-row">
                 <span class="formula-sym">P_min</span>
-                <span class="formula-name">daily protein target, lower end</span>
+                <span class="formula-name">desired daily protein, lower end</span>
                 <input type="text" id="formula-protein-min" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
             <label class="formula-row">
                 <span class="formula-sym">P_max</span>
-                <span class="formula-name">daily protein target, upper end</span>
+                <span class="formula-name">desired daily protein, upper end</span>
                 <input type="text" id="formula-protein-max" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
@@ -344,13 +367,13 @@
             </label>
             <label class="formula-row">
                 <span class="formula-sym">F_min</span>
-                <span class="formula-name">daily fiber target, lower end</span>
+                <span class="formula-name">desired daily fiber, lower end</span>
                 <input type="text" id="formula-fiber-min" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
             <label class="formula-row">
                 <span class="formula-sym">F_max</span>
-                <span class="formula-name">daily fiber target, upper end</span>
+                <span class="formula-name">desired daily fiber, upper end</span>
                 <input type="text" id="formula-fiber-max" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
@@ -380,13 +403,13 @@
             </label>
             <label class="formula-row">
                 <span class="formula-sym">G_min</span>
-                <span class="formula-name">daily fat target, lower end</span>
+                <span class="formula-name">desired daily fat, lower end</span>
                 <input type="text" id="formula-fat-min" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
             <label class="formula-row">
                 <span class="formula-sym">G_max</span>
-                <span class="formula-name">daily fat target, upper end</span>
+                <span class="formula-name">desired daily fat, upper end</span>
                 <input type="text" id="formula-fat-max" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
@@ -412,17 +435,22 @@
             </label>
             <label class="formula-row">
                 <span class="formula-sym">C_min</span>
-                <span class="formula-name">daily carbohydrate target, lower end</span>
+                <span class="formula-name">desired daily carbohydrate, lower end</span>
                 <input type="text" id="formula-carb-min" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
             <label class="formula-row">
                 <span class="formula-sym">C_max</span>
-                <span class="formula-name">daily carbohydrate target, upper end</span>
+                <span class="formula-name">desired daily carbohydrate, upper end</span>
                 <input type="text" id="formula-carb-max" inputmode="decimal" readonly>
                 <span class="formula-unit">g/day</span>
             </label>
         </div>
+
+        <figure class="mtc-figure">
+            <div id="mass-trajectory-chart" class="mass-trajectory-chart"></div>
+            <figcaption>Fig. 1. Projected body mass trajectory from the current 7-day rolling average (m̄) to the healthy mass (m_g), under the exponential decay model of <a href="#sec-1-11">Section 1.3</a>. The amber band denotes the glycogen- and water-attributable scale swing (ΔM_gly) straddling the curve, per <a href="#sec-1-12">Section 1.4</a>; the teal band marks the WHO healthy body-mass-index range (18.5–24.9 kg/m²), per <a href="#sec-1-1-3">Section 1.1.3</a>. Right ordinate: body mass index, a linear rescaling of the left ordinate by height.</figcaption>
+        </figure>
 
         <div id="formula-substituted" class="formula-substituted"></div>
 
@@ -431,18 +459,36 @@
         <div class="sheet-actions">
             <button type="button" id="formula-reset-btn" class="btn">Reset</button>
         </div>
-    </div>
-</div>
 
-<footer class="page-footer">
+        <h2 id="sec-3">References</h2>
+        <p class="ref-item" id="ref-1">[1] P. Boer, "Estimated lean body mass as an index for normalization of body fluid volumes in humans," <i>American Journal of Physiology</i>, vol. 247, no. 4, pp. F632–F636, 1984, doi: <a href="https://doi.org/10.1152/ajprenal.1984.247.4.F632" target="_blank" rel="noopener">10.1152/ajprenal.1984.247.4.F632</a>.</p>
+        <p class="ref-item" id="ref-2">[2] F. I. Katch and W. D. McArdle, <i>Introduction to Nutrition, Exercise, and Health</i>, 4th ed. Philadelphia, PA, USA: Lea &amp; Febiger, 1996.</p>
+        <p class="ref-item" id="ref-3">[3] M. D. Mifflin, S. T. St Jeor, L. A. Hill, B. J. Scott, S. A. Daugherty, and Y. O. Koh, "A new predictive equation for resting energy expenditure in healthy individuals," <i>American Journal of Clinical Nutrition</i>, vol. 51, no. 2, pp. 241–247, 1990, doi: <a href="https://doi.org/10.1093/ajcn/51.2.241" target="_blank" rel="noopener">10.1093/ajcn/51.2.241</a>.</p>
+        <p class="ref-item" id="ref-4">[4] American College of Sports Medicine, <i>ACSM's Guidelines for Exercise Testing and Prescription</i>, 10th ed. Philadelphia, PA, USA: Wolters Kluwer, 2017.</p>
+        <p class="ref-item" id="ref-5">[5] A. V. Nedeltcheva, J. M. Kilkus, J. Imperial, D. A. Schoeller, and P. D. Penev, "Insufficient sleep undermines dietary efforts to reduce adiposity," <i>Annals of Internal Medicine</i>, vol. 153, no. 7, pp. 435–441, 2010, doi: <a href="https://doi.org/10.7326/0003-4819-153-7-201010050-00006" target="_blank" rel="noopener">10.7326/0003-4819-153-7-201010050-00006</a>.</p>
+        <p class="ref-item" id="ref-6">[6] I. Garthe, T. Raastad, P. E. Refsnes, A. Koivisto, and J. Sundgot-Borgen, "Effect of two different weight-loss rates on body composition and strength and power-related performance in elite athletes," <i>International Journal of Sport Nutrition and Exercise Metabolism</i>, vol. 21, no. 2, pp. 97–104, 2011, doi: <a href="https://doi.org/10.1123/ijsnem.21.2.97" target="_blank" rel="noopener">10.1123/ijsnem.21.2.97</a>.</p>
+        <p class="ref-item" id="ref-7">[7] K. R. Westerterp, "Diet induced thermogenesis," <i>Nutrition &amp; Metabolism</i>, vol. 1, art. no. 5, 2004, doi: <a href="https://doi.org/10.1186/1743-7075-1-5" target="_blank" rel="noopener">10.1186/1743-7075-1-5</a>.</p>
+        <p class="ref-item" id="ref-8">[8] World Health Organization, "Physical status: the use and interpretation of anthropometry," Report of a WHO Expert Committee, WHO Technical Report Series 854, Geneva, Switzerland, 1995.</p>
+        <p class="ref-item" id="ref-9">[9] C. C. Chow and K. D. Hall, "The dynamics of human body weight change," <i>PLoS Computational Biology</i>, vol. 4, no. 3, art. no. e1000045, 2008, doi: <a href="https://doi.org/10.1371/journal.pcbi.1000045" target="_blank" rel="noopener">10.1371/journal.pcbi.1000045</a>.</p>
+        <p class="ref-item" id="ref-10">[10] K.-E. Olsson and B. Saltin, "Variation in total body water with muscle glycogen changes in man," <i>Acta Physiologica Scandinavica</i>, vol. 80, no. 1, pp. 11–18, 1970, doi: <a href="https://doi.org/10.1111/j.1748-1716.1970.tb04764.x" target="_blank" rel="noopener">10.1111/j.1748-1716.1970.tb04764.x</a>.</p>
+        <p class="ref-item" id="ref-11">[11] E. R. Helms, C. Zinn, D. S. Rowlands, and S. R. Brown, "A systematic review of dietary protein during caloric restriction in resistance trained lean athletes: a case for higher intakes," <i>International Journal of Sport Nutrition and Exercise Metabolism</i>, vol. 24, no. 2, pp. 127–138, 2014, doi: <a href="https://doi.org/10.1123/ijsnem.2013-0054" target="_blank" rel="noopener">10.1123/ijsnem.2013-0054</a>.</p>
+        <p class="ref-item" id="ref-12">[12] U.S. Department of Agriculture and U.S. Department of Health and Human Services, <i>Dietary Guidelines for Americans, 2020-2025</i>, 9th ed. Washington, DC, USA, 2020.</p>
+        <p class="ref-item" id="ref-13">[13] Institute of Medicine, <i>Dietary Reference Intakes for Energy, Carbohydrate, Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids</i>. Washington, DC, USA: National Academies Press, 2005.</p>
+    </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
     <p>
         &copy; <span id="footer-year"></span> All rights reserved.
         <span class="footer-divider">•</span>
         Designed &amp; Developed by
-        <a href="https://ainlamyae.github.io" target="_blank" rel="noopener">
-            ALI
-        </a>
+        <a href="https://ainlamyae.github.io" target="_blank" rel="noopener">ALI</a>
     </p>
+  </div>
 </footer>
 
 <script src="assets/script.js"></script>
