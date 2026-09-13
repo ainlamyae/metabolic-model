@@ -8,7 +8,7 @@
 \begin{tikzpicture}[
   node distance = 7mm and 18mm,
   block/.style  = {draw, rectangle, rounded corners=2pt, fill=white,
-                   minimum width=34mm, minimum height=13mm, align=center, font=\small},
+                   minimum width=41mm, minimum height=13mm, align=center, font=\small},
   sum/.style    = {draw, circle, fill=white, minimum size=6mm, inner sep=0pt, font=\small},
   signal/.style = {-Latex, thick},
   branch/.style = {circle, fill, inner sep=1.2pt},
@@ -24,8 +24,8 @@
 \node[block, below=of act]     (tef)   {Thermic Effect of Food\\ \textcolor{gray}{$TEF$}};
 \node[block, below=of tef]     (sleep) {Sleep Deprivation Effect\\ \textcolor{gray}{$\delta$}};
 
-\node[block, minimum height=24mm, right=12mm of $(act.east)!0.5!(tef.east)$] (balance)
-  {Energy Balance\\ \textcolor{gray}{$D = BMR + E_{a}$}\\ \textcolor{gray}{$+\, TEF - E_{in}$}};
+\node[block, minimum height=24mm, right=12mm of $(act.east)!0.5!(tef.east)$, yshift=-4mm] (balance)
+  {Energy Balance\\ \textcolor{gray}{$D = BMR + E_{a} + TEF - E_{in}$}};
 \node[block, right=12mm of balance] (mass) {Body Mass Change\\ \textcolor{gray}{$m$}\\ \textcolor{gray}{fat change (g) $= D/\rho$}\\ \textcolor{gray}{$m(t) = \bar{m} + $ fat change}};
 \node[block, above=of mass]    (gly)  {Glycogen + Water Swing\\ \textcolor{gray}{$\Delta M_{gly}$}};
 \node[sum,   right=10mm of mass] (sum) {$+$};
@@ -37,24 +37,24 @@
 \end{scope}
 
 % ---- External inputs (all enter from the left) ----
-\coordinate[left=28mm of bmr.west]   (in-bmr);
-\coordinate[left=28mm of act.west]   (in-act);
-\coordinate[left=28mm of tef.west]   (in-tef);
-\coordinate[left=28mm of sleep.west] (in-sleep);
+\coordinate[left=14mm of bmr.west]   (in-bmr);
+\coordinate[left=14mm of act.west]   (in-act);
+\coordinate[left=14mm of tef.west]   (in-tef);
+\coordinate[left=14mm of sleep.west] (in-sleep);
 \coordinate[below=9mm of in-sleep]   (in-t);
 
 \draw[signal] ($(in-bmr)+(0,3mm)$) -- node[lbl, above, pos=0.35] {$h, a, \sigma$} ([yshift=3mm]bmr.west);
 \draw[signal] (in-act)   -- node[lbl, above, pos=0.35] {$\tau, MET$}       (act.west);
 \draw[signal] (in-tef)   -- node[lbl, above, pos=0.35] {$E_{in}$}          (tef.west);
 \draw[signal] (in-sleep) -- node[lbl, above, pos=0.35] {$s$}               (sleep.west);
-\coordinate (t-branch) at ($(in-t)+(20mm,0)$);
+\coordinate (t-branch) at ($(in-t)+(6mm,0)$);
 \node[branch] at (t-branch) {};
 \draw[signal] (in-t)     -- node[lbl, above, pos=0.1]  {$t$} (in-t -| mass.south) -- (mass.south);
 \draw[signal] (t-branch) |- ([yshift=-3mm]bmr.west);
 
 % ---- Internal signals ----
 \draw[signal] (bmr.east)   -| node[lbl, above, pos=0.25] {$BMR$}   (balance.north);
-\draw[signal] (act.east) -- node[lbl, above] {$E_{a}$} (act.east -| balance.west);
+\draw[signal] ([yshift=-3mm]act.east) -- node[lbl, above] {$E_{a}$} ([yshift=-3mm]act.east -| balance.west);
 \draw[signal] (tef.east) -- node[lbl, above] {$TEF$}   (tef.east -| balance.west);
 \draw[signal] (sleep.east) -| node[lbl, above, pos=0.25] {$\delta$} ([xshift=8mm]balance.south);
 \coordinate (ein-branch) at ($(tef.west)+(-4mm,0)$);
@@ -68,7 +68,7 @@
 
 % ---- Output ----
 \coordinate[right=28mm of sum] (out);
-\draw[signal] (sum.east) -- (out) node[lbl, right] {$m$ (body mass, kg)};
+\draw[signal] (sum.east) -- (out) node[lbl, right, align=left] {$m$ (measured\\ body mass, kg)};
 
 % ---- Feedback: m into the rolling average, m̄ out to every block that reads mass ----
 \coordinate (tap) at ($(sum.east)!0.5!(out)$);
@@ -81,11 +81,11 @@
 \coordinate (mbar-bmr) at ($(mbar |- rolling.south)!0.5!(mbar |- bmr.north)$);
 \node[branch] at (mbar) {};
 \node[branch] at (mbar-bmr) {};
-\draw[signal] (rolling.east) -- (mbar) -| node[lbl, above, pos=0.25] {$\bar{m}$} ([xshift=-5mm]gly.west) -- (gly.west);
+\draw[signal] (rolling.east) -- (mbar) -| node[lbl, right, pos=0.75] {$\bar{m}$} (gly.north);
 \draw[signal] (mbar) -- (mbar-bmr) -| node[lbl, above, pos=0.25] {$\bar{m}$} (bmr.north);
-\draw[signal] (mbar-bmr) |- ($(bmr.south)!0.5!(act.north)$) -| ([xshift=6mm]act.north);
+\draw[signal] (mbar-bmr) |- ($(bmr.south)!0.5!(act.north)$) -| (act.north);
 
 \end{tikzpicture}
-\caption{Block diagram of the human metabolic system.}
+\caption[Block diagram of the human metabolic system model.]{Block diagram of the human metabolic system model; the shaded region marks the system boundary. External inputs enter from the left: height, age, and sex ($h, a, \sigma$), activity ($\tau$, $MET$), food intake ($E_{in}$), sleep duration ($s$), and elapsed time ($t$). The Resting Metabolic Rate, Daily Activity Burn, Thermic Effect of Food, and Sleep Deprivation Effect blocks feed the Energy Balance block, whose daily energy deficit $D$ drives the Body Mass Change block. The Glycogen + Water Swing $\Delta M_{gly}$ is added to that body mass to give the measured body mass $m$, which is fed back through the 7-Day Rolling Average as $\bar{m}$ to the Resting Metabolic Rate, Daily Activity Burn, and Glycogen + Water Swing blocks.}
 \label{fig_systemdiagram}
 \end{figure}

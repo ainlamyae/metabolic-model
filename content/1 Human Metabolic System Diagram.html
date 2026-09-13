@@ -1,120 +1,117 @@
 <figure class="mtc-figure" id="fig_systemdiagram">
-<svg viewBox="0 0 1190 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Block diagram of the human metabolic system: inputs enter on the left, body mass leaves on the right and is fed back through a 7-day rolling average" style="width:100%;height:auto;display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<svg viewBox="135 0 1145 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Block diagram of the human metabolic system: inputs enter on the left, body mass leaves on the right and is fed back through a 7-day rolling average" style="width:100%;height:auto;display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <defs>
     <marker id="sysArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"></path>
     </marker>
   </defs>
 
-  <rect x="260" y="40" width="700" height="460" rx="14" fill="#fef9c3" fill-opacity="0.45" stroke="var(--ink-faint)" stroke-width="1.8"></rect>
-  <text x="610" y="65" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--ink)" letter-spacing="0.5">Human Metabolic System Model</text>
+  <rect x="260" y="40" width="790" height="460" rx="14" fill="#fef9c3" fill-opacity="0.45" stroke="var(--ink-faint)" stroke-width="1.8"></rect>
+  <text x="658" y="65" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--ink)" letter-spacing="0.5">Human Metabolic System Model</text>
 
   <g fill="var(--ink)" text-anchor="middle">
-    <rect x="280" y="60" width="150" height="55" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="355" y="84" font-size="11.5" font-weight="600">7-Day Rolling Average</text>
-    <text x="355" y="101" font-size="12" fill="var(--ink-soft)">m̄</text>
+    <rect x="280" y="60" width="180" height="55" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="370" y="84" font-size="11.5" font-weight="600">7-Day Rolling Average</text>
+    <text x="370" y="101" font-size="12" fill="var(--ink-soft)">m̄</text>
 
-    <rect x="280" y="145" width="150" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="355" y="173" font-size="11.5" font-weight="600">Resting Metabolic Rate</text>
-    <text x="355" y="199" font-size="12" fill="var(--ink-soft)">BMR</text>
+    <rect x="280" y="145" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="370" y="173" font-size="11.5" font-weight="600">Resting Metabolic Rate</text>
+    <text x="370" y="199" font-size="12" fill="var(--ink-soft)">BMR</text>
 
-    <rect x="280" y="235" width="150" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="355" y="263" font-size="11.5" font-weight="600">Daily Activity Burn</text>
-    <text x="355" y="282" font-size="12" fill="var(--ink-soft)">Eₐ</text>
+    <rect x="280" y="235" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="370" y="263" font-size="11.5" font-weight="600">Daily Activity Burn</text>
+    <text x="370" y="282" font-size="12" fill="var(--ink-soft)">Eₐ</text>
 
-    <rect x="280" y="325" width="150" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="355" y="353" font-size="11.5" font-weight="600">Thermic Effect of Food</text>
-    <text x="355" y="379" font-size="12" fill="var(--ink-soft)">TEF</text>
+    <rect x="280" y="325" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="370" y="353" font-size="11.5" font-weight="600">Thermic Effect of Food</text>
+    <text x="370" y="379" font-size="12" fill="var(--ink-soft)">TEF</text>
 
-    <rect x="280" y="415" width="150" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="355" y="443" font-size="11.5" font-weight="600">Sleep Deprivation Effect</text>
-    <text x="355" y="462" font-size="12" fill="var(--ink-soft)">δ</text>
+    <rect x="280" y="415" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="370" y="443" font-size="11.5" font-weight="600">Sleep Deprivation Effect</text>
+    <text x="370" y="462" font-size="12" fill="var(--ink-soft)">δ</text>
 
-    <rect x="520" y="250" width="150" height="110" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="595" y="290" font-size="11.5" font-weight="600">Energy Balance</text>
-    <text x="595" y="312" font-size="12" fill="var(--ink-soft)">D = BMR + Eₐ</text>
-    <text x="595" y="328" font-size="12" fill="var(--ink-soft)">+ TEF − Eᵢₙ</text>
+    <rect x="550" y="265" width="180" height="110" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="640" y="312" font-size="11.5" font-weight="600">Energy Balance</text>
+    <text x="640" y="335" font-size="12" fill="var(--ink-soft)">D = BMR + Eₐ + TEF − Eᵢₙ</text>
 
-    <rect x="750" y="185" width="150" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="825" y="213" font-size="11.5" font-weight="600">Glycogen + Water Swing</text>
-    <text x="825" y="232" font-size="12" fill="var(--ink-soft)">ΔM_gly</text>
+    <rect x="810" y="185" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="900" y="213" font-size="11.5" font-weight="600">Glycogen + Water Swing</text>
+    <text x="900" y="232" font-size="12" fill="var(--ink-soft)">ΔM_gly</text>
 
-    <rect x="750" y="272" width="150" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="825" y="289" font-size="11.5" font-weight="600">Body Mass Change</text>
-    <text x="825" y="303" font-size="12" fill="var(--ink-soft)">m</text>
-    <text x="825" y="317" font-size="10" fill="var(--ink-soft)">fat change (g) = D / ρ</text>
-    <text x="825" y="330" font-size="10" fill="var(--ink-soft)">m(t) = m̄ + fat change</text>
+    <rect x="810" y="272" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="900" y="289" font-size="11.5" font-weight="600">Body Mass Change</text>
+    <text x="900" y="303" font-size="12" fill="var(--ink-soft)">m</text>
+    <text x="900" y="317" font-size="10" fill="var(--ink-soft)">fat change (g) = D / ρ</text>
+    <text x="900" y="330" font-size="10" fill="var(--ink-soft)">m(t) = m̄ + fat change</text>
   </g>
 
   <!-- Every arrow carries one named signal and meets its block's edge perpendicularly. -->
   <g fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)">
-    <path d="M430,177 L595,177 L595,250"></path>
-    <path d="M430,267 L520,267"></path>
-    <path d="M430,357 L520,357"></path>
-    <path d="M430,447 L630,447 L630,360"></path>
-    <path d="M270,357 L270,402 L560,402 L560,360"></path>
-    <path d="M670,305 L750,305"></path>
-    <path d="M900,305 L921,305"></path>
-    <path d="M900,217 L935,217 L935,291"></path>
-    <path d="M949,305 L1080,305"></path>
+    <path d="M460,177 L640,177 L640,265"></path>
+    <path d="M460,282 L550,282"></path>
+    <path d="M460,357 L550,357"></path>
+    <path d="M460,447 L682,447 L682,375"></path>
+    <path d="M270,357 L270,402 L598,402 L598,375"></path>
+    <path d="M730,305 L810,305"></path>
+    <path d="M990,305 L1011,305"></path>
+    <path d="M990,217 L1025,217 L1025,291"></path>
+    <path d="M1039,305 L1170,305"></path>
 
-    <path d="M445,130 L355,130 L355,145"></path>
-    <path d="M445,87 L445,222 L400,222 L400,235"></path>
-    <path d="M730,87 L730,217 L750,217"></path>
-    <path d="M1014,305 L1014,20 L5,20 L5,87 L280,87"></path>
+    <path d="M475,130 L370,130 L370,145"></path>
+    <path d="M475,87 L475,222 L370,222 L370,235"></path>
+    <path d="M460,87 L900,87 L900,185"></path>
+    <path d="M1104,305 L1104,20 L140,20 L140,87 L280,87"></path>
   </g>
-  <g fill="none" stroke="var(--ink-faint)" stroke-width="1.4">
-    <path d="M430,87 L730,87"></path>
-  </g>
-  <circle cx="1014" cy="305" r="2.5" fill="var(--ink-faint)"></circle>
+  <circle cx="1104" cy="305" r="2.5" fill="var(--ink-faint)"></circle>
   <circle cx="270" cy="357" r="2.5" fill="var(--ink-faint)"></circle>
-  <circle cx="445" cy="87" r="2.5" fill="var(--ink-faint)"></circle>
-  <circle cx="445" cy="130" r="2.5" fill="var(--ink-faint)"></circle>
-  <circle cx="935" cy="305" r="14" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></circle>
-  <text x="935" y="311" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)">+</text>
+  <circle cx="475" cy="87" r="2.5" fill="var(--ink-faint)"></circle>
+  <circle cx="475" cy="130" r="2.5" fill="var(--ink-faint)"></circle>
+  <circle cx="1025" cy="305" r="14" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></circle>
+  <text x="1025" y="311" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)">+</text>
 
   <g font-size="10.5" fill="var(--ink-soft)">
-    <text x="500" y="170" text-anchor="middle">BMR</text>
-    <text x="475" y="260" text-anchor="middle">Eₐ</text>
-    <text x="475" y="350" text-anchor="middle">TEF</text>
-    <text x="560" y="440" text-anchor="middle">δ</text>
-    <text x="480" y="396" text-anchor="middle">Eᵢₙ</text>
-    <text x="710" y="298" text-anchor="middle">D</text>
-    <text x="912" y="330" text-anchor="start">m</text>
-    <text x="940" y="262" text-anchor="start">ΔM_gly</text>
-    <text x="400" y="125" text-anchor="middle">m̄</text>
-    <text x="452" y="160" text-anchor="start">m̄</text>
-    <text x="736" y="160" text-anchor="start">m̄</text>
-    <text x="600" y="13" text-anchor="middle">m</text>
+    <text x="530" y="170" text-anchor="middle">BMR</text>
+    <text x="505" y="275" text-anchor="middle">Eₐ</text>
+    <text x="505" y="350" text-anchor="middle">TEF</text>
+    <text x="598" y="440" text-anchor="middle">δ</text>
+    <text x="510" y="396" text-anchor="middle">Eᵢₙ</text>
+    <text x="770" y="298" text-anchor="middle">D</text>
+    <text x="1002" y="330" text-anchor="start">m</text>
+    <text x="1030" y="262" text-anchor="start">ΔM_gly</text>
+    <text x="424" y="125" text-anchor="middle">m̄</text>
+    <text x="482" y="160" text-anchor="start">m̄</text>
+    <text x="906" y="140" text-anchor="start">m̄</text>
+    <text x="646" y="13" text-anchor="middle">m</text>
   </g>
 
   <g font-size="11.5" fill="var(--ink-soft)">
-    <path d="M10,165 L280,165" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
-    <text x="15" y="145" text-anchor="start">h, a, σ</text>
-    <text x="15" y="160" text-anchor="start">(parameters)</text>
+    <path d="M145,165 L280,165" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
+    <text x="150" y="145" text-anchor="start">h, a, σ</text>
+    <text x="150" y="160" text-anchor="start">(parameters)</text>
 
-    <path d="M10,267 L280,267" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
-    <text x="15" y="260" text-anchor="start">τ, MET</text>
-    <text x="15" y="282" text-anchor="start">(activity)</text>
+    <path d="M145,267 L280,267" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
+    <text x="150" y="260" text-anchor="start">τ, MET</text>
+    <text x="150" y="282" text-anchor="start">(activity)</text>
 
-    <path d="M10,357 L280,357" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
-    <text x="15" y="350" text-anchor="start">Eᵢₙ</text>
-    <text x="15" y="372" text-anchor="start">(food intake, kcal)</text>
+    <path d="M145,357 L280,357" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
+    <text x="150" y="350" text-anchor="start">Eᵢₙ</text>
+    <text x="150" y="372" text-anchor="start">(food intake, kcal)</text>
 
-    <path d="M10,447 L280,447" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
-    <text x="15" y="440" text-anchor="start">s</text>
-    <text x="15" y="462" text-anchor="start">(sleep, hours)</text>
+    <path d="M145,447 L280,447" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
+    <text x="150" y="440" text-anchor="start">s</text>
+    <text x="150" y="462" text-anchor="start">(sleep, hours)</text>
 
-    <path d="M10,490 L880,490 L880,337" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
+    <path d="M145,490 L966,490 L966,337" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
     <path d="M240,490 L240,195 L280,195" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#sysArrow)"></path>
     <circle cx="240" cy="490" r="2.5" fill="var(--ink-faint)"></circle>
     <text x="250" y="190" text-anchor="start" font-size="10.5">t</text>
-    <text x="15" y="483" text-anchor="start">t</text>
-    <text x="15" y="505" text-anchor="start">(time, days)</text>
+    <text x="150" y="483" text-anchor="start">t</text>
+    <text x="150" y="505" text-anchor="start">(time, days)</text>
 
-    <text x="1086" y="300" font-size="12.5" fill="var(--ink)">m</text>
-    <text x="1086" y="315">(body mass, kg)</text>
+    <text x="1176" y="300" font-size="12.5" fill="var(--ink)">m</text>
+    <text x="1176" y="315">(measured</text>
+    <text x="1176" y="330">body mass, kg)</text>
   </g>
 </svg>
-<figcaption>Fig. 1. Block diagram of the human metabolic system.</figcaption>
+<figcaption>Fig. 1. Block diagram of the human metabolic system model; the shaded region marks the system boundary. External inputs enter from the left: height, age, and sex (h, a, σ), activity (τ, MET), food intake (Eᵢₙ), sleep duration (s), and elapsed time (t). The Resting Metabolic Rate, Daily Activity Burn, Thermic Effect of Food, and Sleep Deprivation Effect blocks feed the Energy Balance block, whose daily energy deficit D drives the Body Mass Change block. The Glycogen + Water Swing ΔM_gly is added to that body mass to give the measured body mass m, which is fed back through the 7-Day Rolling Average as m̄ to the Resting Metabolic Rate, Daily Activity Burn, and Glycogen + Water Swing blocks.</figcaption>
 </figure>
