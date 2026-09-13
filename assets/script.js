@@ -1836,7 +1836,7 @@ const SUBPLOT_MARGIN_TOP = 16;
 const SUBPLOT_MARGIN_BOTTOM = 34;
 
 function subplotFrameSvgParts({
-  tTotal, yMin, yMax, yUnitLabel, xAt, yAt,
+  tTotal, yMin, yMax, yUnitLabel, xAt, yAt, rightUnitLabel, rightConvert,
 }) {
   const parts = [];
   const yTickCount = 4;
@@ -1845,6 +1845,12 @@ function subplotFrameSvgParts({
     const y = yAt(v);
     parts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${y.toFixed(1)}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"></line>`);
     parts.push(`<text x="${SUBPLOT_MARGIN_LEFT - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--ink-faint)">${Math.round(v)}</text>`);
+    // Right axis, when given — the same y-pixel row relabelled in another
+    // unit via a fixed conversion factor, same trick as (a)'s BMI axis,
+    // rather than a second independent scale.
+    if (rightConvert) {
+      parts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT + 8}" y="${(y + 3).toFixed(1)}" text-anchor="start" font-size="10.5" fill="var(--ink-faint)">${rightConvert(v)}</text>`);
+    }
   }
   dateAxisTicks(tTotal).forEach(({ t, label }) => {
     const x = xAt(t);
@@ -1854,6 +1860,10 @@ function subplotFrameSvgParts({
   parts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${SUBPLOT_MARGIN_TOP}" x2="${SUBPLOT_MARGIN_LEFT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
   parts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
   parts.push(`<text x="${SUBPLOT_MARGIN_LEFT}" y="12" font-size="10.5" font-weight="600" fill="var(--ink-faint)">${yUnitLabel}</text>`);
+  if (rightUnitLabel) {
+    parts.push(`<line x1="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y1="${SUBPLOT_MARGIN_TOP}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
+    parts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y="12" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink-faint)">${rightUnitLabel}</text>`);
+  }
   return parts;
 }
 
@@ -1871,7 +1881,7 @@ function legendLineMark(color, dashed) {
 // Which layer of the balance subplot is toggled on — same pattern as
 // massTrajectoryLayerVisible above.
 const balanceLayerVisible = {
-  deficit: true, maintenance: true, intake: true, tef: true, sleep: true,
+  deficit: true, maintenance: true, bmr: true, activity: true, intake: true, tef: true, sleep: true,
 };
 
 // Subplot (b): the daily energy balance (deficit/surplus) that drives the
@@ -1896,14 +1906,31 @@ function renderBalanceChart() {
   for (let i = 0; i <= steps; i += 1) {
     const t = (totalDays * i) / steps;
     const einAtT = t > tTotal ? maintenanceEin : einKcal;
-    const maintenance = maintenanceKcalAtMass(coefficients, massTrajectoryAtDay(inputs, t));
+    const mass = massTrajectoryAtDay(inputs, t);
+    const bmr = coefficients.aBmr + coefficients.bBmr * mass;
+    const activityKcal = coefficients.activityPerKg * mass;
+    const maintenance = bmr + activityKcal;
+    const tefAtT = einAtT * (1 - divisor);
+    const deficit = maintenance - einAtT * divisor;
     points.push({
-      t, maintenance, einAtT, tefAtT: einAtT * (1 - divisor), deficit: maintenance - einAtT * divisor,
+      // Signed by physical direction — leaves the body (BMR, activity,
+      // maintenance, TEF, and net balance while in a real deficit) negative,
+      // enters it (intake, and net balance while in a surplus) positive.
+      t,
+      bmrSigned: -bmr,
+      activitySigned: -activityKcal,
+      maintenanceSigned: -maintenance,
+      einAtT,
+      tefSigned: -tefAtT,
+      deficit,
+      deficitSigned: -deficit,
     });
   }
 
   const values = [
-    ...points.map((p) => p.maintenance), ...points.map((p) => p.deficit), ...points.map((p) => p.einAtT), 0,
+    ...points.map((p) => p.bmrSigned), ...points.map((p) => p.activitySigned),
+    ...points.map((p) => p.maintenanceSigned), ...points.map((p) => p.tefSigned),
+    ...points.map((p) => p.deficitSigned), ...points.map((p) => p.einAtT), 0,
     ...(sleepDeprivationKcal > 0 ? [sleepDeprivationKcal] : []),
   ];
   const valMin = Math.min(...values);
@@ -1924,24 +1951,36 @@ function renderBalanceChart() {
     svgParts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${yAt(0).toFixed(1)}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${yAt(0).toFixed(1)}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 3"></line>`);
   }
   svgParts.push(...subplotFrameSvgParts({
-    tTotal: totalDays, yMin, yMax, yUnitLabel: 'kcal/day', xAt, yAt,
+    tTotal: totalDays,
+    yMin,
+    yMax,
+    yUnitLabel: 'kcal/day',
+    xAt,
+    yAt,
+    rightUnitLabel: 'g fat',
+    rightConvert: (v) => (v / KCAL_PER_G_FAT).toFixed(1),
   }));
   if (yMin < 0 && yMax > 0) {
     svgParts.push(`<text x="${SUBPLOT_MARGIN_LEFT - 8}" y="${(yAt(0) + 3).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--ink-faint)">0</text>`);
+    svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT + 8}" y="${(yAt(0) + 3).toFixed(1)}" text-anchor="start" font-size="10.5" fill="var(--ink-faint)">0.0</text>`);
   }
   svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${xAt(tTotal).toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
 
   if (balanceLayerVisible.intake) svgParts.push(`<path d="${lineD('einAtT')}" fill="none" stroke="var(--accent)" stroke-width="2"></path>`);
-  if (balanceLayerVisible.tef) svgParts.push(`<path d="${lineD('tefAtT')}" fill="none" stroke="var(--amber)" stroke-width="2"></path>`);
+  if (balanceLayerVisible.tef) svgParts.push(`<path d="${lineD('tefSigned')}" fill="none" stroke="var(--amber)" stroke-width="2"></path>`);
   if (sleepDeprivationKcal > 0 && balanceLayerVisible.sleep) svgParts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${yAt(sleepDeprivationKcal).toFixed(1)}" x2="${xAt(tTotal).toFixed(1)}" y2="${yAt(sleepDeprivationKcal).toFixed(1)}" stroke="var(--teal)" stroke-width="2" stroke-dasharray="4 3"></line>`);
-  if (balanceLayerVisible.maintenance) svgParts.push(`<path d="${lineD('maintenance')}" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="5 3"></path>`);
-  if (balanceLayerVisible.deficit) svgParts.push(`<path d="${lineD('deficit')}" fill="none" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round"></path>`);
+  if (balanceLayerVisible.bmr) svgParts.push(`<path d="${lineD('bmrSigned')}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="1 3" stroke-linecap="round"></path>`);
+  if (balanceLayerVisible.activity) svgParts.push(`<path d="${lineD('activitySigned')}" fill="none" stroke="#0891b2" stroke-width="2" stroke-dasharray="1 3" stroke-linecap="round"></path>`);
+  if (balanceLayerVisible.maintenance) svgParts.push(`<path d="${lineD('maintenanceSigned')}" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="5 3"></path>`);
+  if (balanceLayerVisible.deficit) svgParts.push(`<path d="${lineD('deficitSigned')}" fill="none" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round"></path>`);
 
   svgParts.push(subplotHoverSvgParts('var(--danger)'), '</svg>', '<div class="mtc-tooltip" hidden></div>');
 
   const legendItems = [
     { key: 'deficit', color: 'var(--danger)', label: 'D (daily energy deficit)' },
     { key: 'maintenance', color: 'var(--ink-soft)', label: 'M (maintenance at m̄ — BMR + Eₐ)', dashed: true },
+    { key: 'bmr', color: '#7c3aed', label: 'BMR (resting metabolic rate, at m̄)', dashed: true },
+    { key: 'activity', color: '#0891b2', label: 'Eₐ (daily desired activity burn)', dashed: true },
     { key: 'intake', color: 'var(--accent)', label: 'Eᵢₙ (desired daily intake)' },
     { key: 'tef', color: 'var(--amber)', label: 'TEF (energy spent digesting that intake)' },
   ];
@@ -1959,42 +1998,48 @@ function renderBalanceChart() {
   attachSubplotHover(el, {
     xAt, plotW, marginLeft: SUBPLOT_MARGIN_LEFT, tTotal: totalDays,
     sample: (t) => {
-      const maintenance = maintenanceKcalAtMass(coefficients, massTrajectoryAtDay(inputs, t));
+      const mass = massTrajectoryAtDay(inputs, t);
+      const bmr = coefficients.aBmr + coefficients.bBmr * mass;
+      const activityKcal = coefficients.activityPerKg * mass;
+      const maintenance = bmr + activityKcal;
       const einAtT = t > tTotal ? maintenanceEin : einKcal;
       const deficit = maintenance - einAtT * divisor;
       const lines = [
         dayDateLabel(t),
-        `D (daily energy ${deficit >= 0 ? 'deficit' : 'surplus'}) ${Math.abs(Math.round(deficit))} kcal/day`,
-        `M (maintenance at m̄ — BMR + Eₐ) ${Math.round(maintenance)} kcal/day`,
+        `D (daily energy deficit) ${Math.round(-deficit)} kcal/day`,
+        `M (maintenance at m̄ — BMR + Eₐ) ${Math.round(-maintenance)} kcal/day`,
+        `BMR (resting metabolic rate, at m̄) ${Math.round(-bmr)} kcal/day`,
+        `Eₐ (daily desired activity burn) ${Math.round(-activityKcal)} kcal/day`,
         `Eᵢₙ (desired daily intake) ${Math.round(einAtT)} kcal/day`,
-        `TEF (energy spent digesting that intake) ${Math.round(einAtT * (1 - divisor))} kcal/day`,
+        `TEF (energy spent digesting that intake) ${Math.round(-einAtT * (1 - divisor))} kcal/day`,
       ];
       if (sleepDeprivationKcal > 0 && t <= tTotal) lines.push(`δ (Sleep Deprivation Effect) +${Math.round(sleepDeprivationKcal)} kcal/day`);
       if (t > tTotal) lines.push('(maintenance tail, past arrival)');
-      return { y: yAt(deficit), text: lines.join('\n') };
+      return { y: yAt(-deficit), text: lines.join('\n') };
     },
   });
 }
 
 // Which layer of the calories-intake subplot is toggled on.
 const intakeLayerVisible = {
-  ein: true, bmr: true, protein: true, fiber: true, fat: true, carb: true,
+  ein: true, protein: true, fiber: true, fat: true, carb: true,
 };
 
-// Subplot (c): Eᵢₙ, the sheet's own desired-daily-intake field, against BMR,
-// the sheet's own resting-metabolic-rate field (left axis, kcal/day) — the
-// same two numbers printed above, so day 0 here reads exactly like
-// formula-ein/formula-bmr. Stacked on the right axis (g/day), the four §1.5
-// dietary bands, protein at the bottom then fiber, fat and carbohydrate —
-// each drawn as a solid floor (its min) under a lighter ceiling (its max),
-// stacked on the previous layer's max so bands never overlap.
+// Subplot (c): Eᵢₙ, the sheet's own desired-daily-intake field (left axis,
+// kcal/day) — reads exactly like formula-ein above, so day 0 here never
+// disagrees with the sheet. Layered underneath it, purely comparative (no
+// gram axis, since the stack sums four different substances a single scale
+// couldn't read accurately for any one of them), the four §1.5 dietary
+// bands — protein at the bottom then dietary fiber, fat and carbohydrate —
+// each a solid floor (its min) under a lighter ceiling (its max), stacked
+// on the previous layer's max so bands never overlap. Exact grams for each
+// are in the hover text.
 function renderCaloriesIntakeChart() {
   const el = document.getElementById('calories-intake-chart');
   const inputs = readMassTrajectoryInputs();
   if (!inputs || !inputs.curve) { el.innerHTML = ''; return; }
 
   const { tTotal, totalDays, mg, curve } = inputs;
-  const { aBmr, bBmr } = curve.coefficients;
   const einKcal = curve.einKcal;
   const maintenanceEin = maintenanceKcalAtMass(curve.coefficients, mg) / curve.coefficients.tefDivisor;
   const macroCoeffs = readMacroBandCoefficients();
@@ -2005,7 +2050,7 @@ function renderCaloriesIntakeChart() {
     const t = (totalDays * i) / steps;
     const mass = massTrajectoryAtDay(inputs, t);
     const einAtT = t > tTotal ? maintenanceEin : einKcal;
-    const point = { t, bmr: aBmr + bBmr * mass, einAtT };
+    const point = { t, einAtT };
     if (macroCoeffs) {
       const bands = macroBandsAtMass(macroCoeffs, mass, einAtT);
       let base = 0;
@@ -2020,8 +2065,7 @@ function renderCaloriesIntakeChart() {
     points.push(point);
   }
 
-  const values = [...points.map((p) => p.bmr), ...points.map((p) => p.einAtT)];
-  const valMax = Math.max(...values);
+  const valMax = Math.max(...points.map((p) => p.einAtT));
   const yMin = 0;
   const yMax = valMax * 1.15;
   const gramsMax = macroCoeffs ? Math.max(...points.map((p) => p.stackTop)) * 1.08 : 0;
@@ -2031,7 +2075,6 @@ function renderCaloriesIntakeChart() {
   const xAt = (t) => SUBPLOT_MARGIN_LEFT + (plotW * t) / totalDays;
   const yAt = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * (v - yMin)) / (yMax - yMin);
   const yAtGrams = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * v) / gramsMax;
-  const bmrPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.bmr).toFixed(1)}`).join(' ');
   const einPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.einAtT).toFixed(1)}`).join(' ');
   const macroBandPath = (key, lowField, highField) => {
     const top = points.map((p) => `${xAt(p.t).toFixed(1)},${yAtGrams(p.layers[key][highField]).toFixed(1)}`);
@@ -2039,12 +2082,15 @@ function renderCaloriesIntakeChart() {
     return `M ${top.join(' L ')} L ${bottom.join(' L ')} Z`;
   };
 
-  const svgParts = [`<svg viewBox="0 0 ${SUBPLOT_WIDTH} ${SUBPLOT_HEIGHT}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Desired daily intake against resting metabolic rate, with the protein, dietary fiber, fat and carbohydrate bands stacked on the right axis">`];
+  const svgParts = [`<svg viewBox="0 0 ${SUBPLOT_WIDTH} ${SUBPLOT_HEIGHT}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Desired daily intake, with the protein, dietary fiber, fat and carbohydrate bands stacked on the right axis">`];
   svgParts.push(...subplotFrameSvgParts({
     tTotal: totalDays, yMin, yMax, yUnitLabel: 'kcal/day', xAt, yAt,
   }));
   svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${xAt(tTotal).toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
 
+  // No right (grams) axis: the stack sums four different substances, so a
+  // single gram scale on it wouldn't accurately read for any one of them —
+  // the bands stay purely comparative, with exact grams in the hover text.
   if (macroCoeffs) {
     MACRO_BAND_ORDER.forEach((key) => {
       if (!intakeLayerVisible[key]) return;
@@ -2052,23 +2098,14 @@ function renderCaloriesIntakeChart() {
       svgParts.push(`<path d="${macroBandPath(key, 'base', 'minTop')}" fill="${color}" fill-opacity="0.55" stroke="none"></path>`);
       svgParts.push(`<path d="${macroBandPath(key, 'minTop', 'maxTop')}" fill="${color}" fill-opacity="0.22" stroke="none"></path>`);
     });
-    for (let i = 0; i <= 4; i += 1) {
-      const v = (gramsMax * i) / 4;
-      const y = yAtGrams(v);
-      svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT + 8}" y="${(y + 3).toFixed(1)}" text-anchor="start" font-size="10.5" fill="var(--ink-faint)">${Math.round(v)}</text>`);
-    }
-    svgParts.push(`<line x1="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y1="${SUBPLOT_MARGIN_TOP}" x2="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1.4"></line>`);
-    svgParts.push(`<text x="${SUBPLOT_WIDTH - SUBPLOT_MARGIN_RIGHT}" y="12" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink-faint)">g/day</text>`);
   }
 
-  if (intakeLayerVisible.bmr) svgParts.push(`<path d="${bmrPathD}" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="5 3"></path>`);
   if (intakeLayerVisible.ein) svgParts.push(`<path d="${einPathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"></path>`);
 
   svgParts.push(subplotHoverSvgParts('var(--accent)'), '</svg>', '<div class="mtc-tooltip" hidden></div>');
 
   const legendItems = [
     { key: 'ein', color: 'var(--accent)', label: 'Eᵢₙ (desired daily intake)', line: true },
-    { key: 'bmr', color: 'var(--ink-soft)', label: 'BMR (resting metabolic rate, at m̄)', line: true, dashed: true },
   ];
   if (macroCoeffs) MACRO_BAND_ORDER.forEach((key) => legendItems.push({ key, color: MACRO_BAND_COLORS[key], label: MACRO_BAND_LABELS[key] }));
   svgParts.push(`<div class="mtc-legend">${legendItems.map((item) => `<button type="button" class="mtc-legend-item${intakeLayerVisible[item.key] ? '' : ' mtc-legend-item-off'}" data-layer="${item.key}">${item.line ? legendLineMark(item.color, item.dashed) : `<span class="mtc-legend-swatch" style="background:${item.color}"></span>`}${item.label}</button>`).join('')}</div>`);
@@ -2085,12 +2122,10 @@ function renderCaloriesIntakeChart() {
     xAt, plotW, marginLeft: SUBPLOT_MARGIN_LEFT, tTotal: totalDays,
     sample: (t) => {
       const mass = massTrajectoryAtDay(inputs, t);
-      const bmr = aBmr + bBmr * mass;
       const einAtT = t > tTotal ? maintenanceEin : einKcal;
       const lines = [
         dayDateLabel(t),
         `Eᵢₙ (desired daily intake) ${Math.round(einAtT)} kcal/day`,
-        `BMR (resting metabolic rate, at m̄) ${Math.round(bmr)} kcal/day`,
       ];
       if (macroCoeffs) {
         const bands = macroBandsAtMass(macroCoeffs, mass, einAtT);
@@ -2100,7 +2135,7 @@ function renderCaloriesIntakeChart() {
         });
       }
       if (t > tTotal) lines.push('(maintenance tail, past arrival)');
-      return { y: yAt(bmr), text: lines.join('\n') };
+      return { y: yAt(einAtT), text: lines.join('\n') };
     },
   });
 }
@@ -2120,16 +2155,18 @@ function renderActivityChart() {
   const { tTotal, totalDays, curve } = inputs;
   const { coefficients, tau } = curve;
 
+  // Activity burn leaves the body, so it's plotted negative — same
+  // outflow-negative/inflow-positive convention as the balance subplot.
   const steps = 40;
   const points = [];
   for (let i = 0; i <= steps; i += 1) {
     const t = (totalDays * i) / steps;
-    points.push({ t, kcal: coefficients.activityPerKg * massTrajectoryAtDay(inputs, t) });
+    points.push({ t, kcal: -coefficients.activityPerKg * massTrajectoryAtDay(inputs, t) });
   }
 
-  const kcalMax = Math.max(...points.map((p) => p.kcal));
-  const yMin = 0;
-  const yMax = kcalMax * 1.15;
+  const kcalMin = Math.min(...points.map((p) => p.kcal));
+  const yMin = kcalMin * 1.15;
+  const yMax = 0;
   // The right (minutes) axis has its own, independent scale — τ centred in
   // it — since minutes and calories aren't linearly tied the way mass and
   // BMI are in the chart above.
@@ -2182,7 +2219,7 @@ function renderActivityChart() {
     xAt, plotW, marginLeft: SUBPLOT_MARGIN_LEFT, tTotal: totalDays,
     sample: (t) => {
       const mass = massTrajectoryAtDay(inputs, t);
-      const kcal = coefficients.activityPerKg * mass;
+      const kcal = -coefficients.activityPerKg * mass;
       const lines = [dayDateLabel(t), `Eₐ (daily desired activity burn) ${Math.round(kcal)} kcal/day`, `τ (Activity time) ${Math.round(tau)} min/day`];
       if (t > tTotal) lines.push('(maintenance tail, past arrival)');
       return { y: yAt(kcal), text: lines.join('\n') };
