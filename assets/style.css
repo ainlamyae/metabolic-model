@@ -948,6 +948,22 @@ ul.limits li b {
     flex: none;
 }
 
+.glossary {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 18px;
+    margin: 0 0 1rem;
+}
+
+.glossary dt {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.glossary dd {
+    margin: 0;
+}
+
 .mtc-subplot-label {
     margin: 6px 0 18px;
     font-size: 11px;
