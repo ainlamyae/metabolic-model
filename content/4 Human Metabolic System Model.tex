@@ -2,13 +2,7 @@
 % document that supplies \documentclass, packages (amsmath, unicode-math +
 % fontspec for the raw Unicode math symbols below — compile the master with
 % xelatex or lualatex), \begin{document}/\end{document}, and its own
-% \bibliographystyle/\bibliography pointing at "4 References.bib".
-
-\section{Human Metabolic System Diagram}
-
-The human metabolic system is a multi-input, single-output system: several inputs act simultaneously on a single output, the measured body mass m. Height, age, and sex (h, a, σ) are fixed parameters, whereas activity (τ, MET), food intake (Eᵢₙ), and sleep duration (s) are controllable inputs, each entering the Energy Balance through its own path. Driving m toward the healthy body mass m_d therefore requires regulating all controllable inputs together; an input left uncontrolled acts as an unregulated disturbance on D that the remaining inputs cannot reliably compensate for, and the output drifts from its desire.
-
-\input{1 Human Metabolic System Diagram}
+% \bibliographystyle/\bibliography pointing at "8 References.bib".
 
 \section{Human Metabolic System Model}
 
@@ -31,11 +25,11 @@ m̄ = \frac{1}{7} × Σ m(t−i), \quad i = 0…6
 
 \subsubsection{Healthy Human Body Mass Index}
 
-The healthy body mass m_d can equivalently be expressed as a healthy body mass index, BMI_g, computed from m_d and height h. A BMI between 18.5 and 24.9 is the World Health Organization's healthy-weight band \cite{ref_who1995}, and this figure is flagged when it falls outside that range. The relationship between m_d and BMI_g is given in eqn.~\eqref{eqn_bmig}.
+The healthy body mass m_des can equivalently be expressed as a healthy body mass index, BMI_des, computed from m_des and height h. A BMI between 18.5 and 24.9 is the World Health Organization's healthy-weight band \cite{ref_who1995}, and this figure is flagged when it falls outside that range. The relationship between m_des and BMI_des is given in eqn.~\eqref{eqn_bmig}.
 
 \begin{equation}
 \label{eqn_bmig}
-BMI_{g} = \frac{m_{d}}{(h/100)^{2}}
+BMI_{des} = \frac{m_{des}}{(h/100)^{2}}
 \end{equation}
 
 \subsubsection{Human Lean Body Mass Parameter}
@@ -77,16 +71,16 @@ Activity burn quantifies the additional energy expended by scheduled physical ac
 
 \begin{equation}
 \label{eqn_eact}
-E_{a} = \frac{MET × m̄ × τ × κ}{ε}
+E_{act} = \frac{MET × m̄ × τ × κ}{ε}
 \end{equation}
 
 \subsubsection{Sleep Deprivation Effect}
 
-Insufficient sleep has been shown to reduce fat loss and increase lean-mass loss during caloric restriction \cite{ref_nedeltcheva2010}, so a given energy deficit yields less fat loss on a short night than on a full one. The Sleep Efficiency Factor η captures this reduction as a function of the sleep deprivation rate (γ), the assumed desire sleep (s\_d), and actual sleep length (s), as given in eqn.~\eqref{eqn_slef}.
+Insufficient sleep has been shown to reduce fat loss and increase lean-mass loss during caloric restriction \cite{ref_nedeltcheva2010}, so a given energy deficit yields less fat loss on a short night than on a full one. The Sleep Efficiency Factor η captures this reduction as a function of the sleep deprivation rate (γ), the assumed desire sleep (s\_des), and actual sleep length (s), as given in eqn.~\eqref{eqn_slef}.
 
 \begin{equation}
 \label{eqn_slef}
-η = 1 − \frac{γ}{100} × \max(0, s_{d} − s)
+η = 1 − \frac{γ}{100} × \max(0, s_{des} − s)
 \end{equation}
 
 \subsubsection{Weekly Fat Loss Rate}
@@ -104,7 +98,7 @@ D = \frac{Δm × ρ}{7 × η}
 
 \subsubsection{Thermic Effect of Food}
 
-Digesting, absorbing, and metabolizing food itself consumes energy — the thermic effect of food (TEF) — typically amounting to 5–15\% of daily energy expenditure on a mixed diet, with protein eliciting the largest effect per calorie \cite{ref_westerterp2004}. The thermic cost differs by macronutrient — commonly cited figures put protein near 20–30\% of its own calories, carbohydrate near 5–10\%, and fat near 0–3\% \cite{ref_westerterp2004} — but here TEF is modeled as a single fixed share f of the desire daily intake (Eᵢₙ, introduced below) rather than a macronutrient-weighted sum, as given in eqn.~\eqref{eqn_tefq}, and is folded into the intake identity by solving rather than by simple addition.
+Digesting, absorbing, and metabolizing food itself consumes energy — the thermic effect of food (TEF) — typically amounting to 5–15\% of daily energy expenditure on a mixed diet, with protein eliciting the largest effect per calorie \cite{ref_westerterp2004}. The thermic cost differs by macronutrient — commonly cited figures put protein near 20–30\% of its own calories, carbohydrate near 5–10\%, and fat near 0–3\% \cite{ref_westerterp2004} — but here TEF is modeled as a single fixed share f of the desire daily intake (E_in, introduced below) rather than a macronutrient-weighted sum, as given in eqn.~\eqref{eqn_tefq}, and is folded into the intake identity by solving rather than by simple addition.
 
 \begin{equation}
 \label{eqn_tefq}
@@ -113,16 +107,16 @@ TEF = f × E_{in}
 
 \subsubsection{Desire Daily Intake}
 
-The desire daily intake Eᵢₙ is the calorie level that, net of the thermic effect of food, still leaves the desired deficit D on top of maintenance (BMR + Eₐ). Because TEF is itself a share of Eᵢₙ rather than a fixed amount, the identity is solved for Eᵢₙ directly — placing (1 − f) in the denominator — instead of treating TEF as a further subtraction, as given in eqn.~\eqref{eqn_eink}.
+The desire daily intake E_in is the calorie level that, net of the thermic effect of food, still leaves the desired deficit D on top of maintenance (BMR + E_act). Because TEF is itself a share of E_in rather than a fixed amount, the identity is solved for E_in directly — placing (1 − f) in the denominator — instead of treating TEF as a further subtraction, as given in eqn.~\eqref{eqn_eink}.
 
 \begin{equation}
 \label{eqn_eink}
-E_{in} = BMR + E_{a} + TEF − D = \frac{BMR + E_{a} − D}{1 − f}
+E_{in} = BMR + E_{act} + TEF − D = \frac{BMR + E_{act} − D}{1 − f}
 \end{equation}
 
 \subsection{Maintenance and Mass Trajectory}
 
-Maintenance energy expenditure M(m̄) = A + B×m̄ is affine in body mass under either resting-metabolic-rate formula, with the coefficients A and B given in eqns.~\eqref{eqn_amif}–\eqref{eqn_bkat}. Under Katch-McArdle, c\_m, c\_h, and c\_0 are the same sex-specific Boer coefficients from eqn.~\eqref{eqn_lbmm}/\eqref{eqn_lbmf} (0.407, 0.267, −19.2 for males; 0.252, 0.473, −48.3 for females), substituted in place of LBM so A and B stay linear in h alone. Holding intake Eᵢₙ fixed then drives body mass toward a single equilibrium m∞ = (Eᵢₙ − A)/B, as given in eqn.~\eqref{eqn_meqm}, and mass approaches that equilibrium exponentially over the elapsed time t (in days) rather than linearly — the same first-order dynamics used to model human body-weight change under sustained energy imbalance \cite{ref_chow2008} — as given in eqn.~\eqref{eqn_mdec}, with t to a healthy mass following from inverting that decay in eqn.~\eqref{eqn_tday}.
+Maintenance energy expenditure M(m̄) = A + B×m̄ is affine in body mass under either resting-metabolic-rate formula, with the coefficients A and B given in eqns.~\eqref{eqn_amif}–\eqref{eqn_bkat}. Under Katch-McArdle, c\_m, c\_h, and c\_0 are the same sex-specific Boer coefficients from eqn.~\eqref{eqn_lbmm}/\eqref{eqn_lbmf} (0.407, 0.267, −19.2 for males; 0.252, 0.473, −48.3 for females), substituted in place of LBM so A and B stay linear in h alone. Holding intake E_in fixed then drives body mass toward a single equilibrium m∞ = (E_in − A)/B, as given in eqn.~\eqref{eqn_meqm}, and mass approaches that equilibrium exponentially over the elapsed time t (in days) rather than linearly — the same first-order dynamics used to model human body-weight change under sustained energy imbalance \cite{ref_chow2008} — as given in eqn.~\eqref{eqn_mdec}, with t to a healthy mass following from inverting that decay in eqn.~\eqref{eqn_tday}.
 
 When a fixed weekly percentage of body mass Δm\% is held instead of a fixed intake, the loop closes differently: mass is re-derived from itself every period rather than converging on an equilibrium, giving proportional decay with no plateau, as given in eqns.~\eqref{eqn_mprp}–\eqref{eqn_tprp}.
 
@@ -154,7 +148,7 @@ m̄(t) = m∞ + (m̄ − m∞) × e^{−B×t/ρ}
 \end{equation}
 \begin{equation}
 \label{eqn_tday}
-t = \frac{ρ}{B} × \ln\!\left[ \frac{m̄ − m∞}{m_{d} − m∞} \right]
+t = \frac{ρ}{B} × \ln\!\left[ \frac{m̄ − m∞}{m_{des} − m∞} \right]
 \end{equation}
 \begin{equation}
 \label{eqn_mprp}
