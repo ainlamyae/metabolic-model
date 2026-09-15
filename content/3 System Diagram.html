@@ -15,12 +15,12 @@
     <text x="370" y="101" font-size="12" fill="var(--ink-soft)">m̄</text>
 
     <rect x="280" y="145" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="370" y="173" font-size="11.5" font-weight="600">Resting Metabolic Rate</text>
+    <text x="370" y="173" font-size="11.5" font-weight="600">Basal Metabolic Rate</text>
     <text x="370" y="199" font-size="12" fill="var(--ink-soft)">BMR</text>
 
     <rect x="280" y="235" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
-    <text x="370" y="263" font-size="11.5" font-weight="600">Daily Activity Burn</text>
-    <text x="370" y="282" font-size="12" fill="var(--ink-soft)">E_act</text>
+    <text x="370" y="263" font-size="11.5" font-weight="600">Activity Energy Expenditure</text>
+    <text x="370" y="282" font-size="12" fill="var(--ink-soft)">AEE</text>
 
     <rect x="280" y="325" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
     <text x="370" y="353" font-size="11.5" font-weight="600">Thermic Effect of Food</text>
@@ -32,7 +32,7 @@
 
     <rect x="550" y="265" width="180" height="110" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
     <text x="640" y="312" font-size="11.5" font-weight="600">Energy Balance</text>
-    <text x="640" y="335" font-size="12" fill="var(--ink-soft)">D = E_in − (BMR + E_act + TEF)</text>
+    <text x="640" y="335" font-size="12" fill="var(--ink-soft)">D = E_in − (BMR + AEE + TEF)</text>
 
     <rect x="810" y="185" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
     <text x="900" y="213" font-size="11.5" font-weight="600">Glycogen + Water Swing</text>
@@ -69,7 +69,7 @@
 
   <g font-size="10.5" fill="var(--ink-soft)">
     <text x="530" y="170" text-anchor="middle">BMR</text>
-    <text x="505" y="275" text-anchor="middle">E_act</text>
+    <text x="505" y="275" text-anchor="middle">AEE</text>
     <text x="505" y="350" text-anchor="middle">TEF</text>
     <text x="598" y="440" text-anchor="middle">δ</text>
     <text x="510" y="396" text-anchor="middle">E_in</text>
@@ -114,5 +114,5 @@
     <text x="1176" y="330">body mass, kg)</text>
   </g>
 </svg>
-<figcaption>Fig. 1. Block diagram of the human metabolic system model; the shaded region marks the system boundary. External inputs enter from the left: height, age, and sex (h, a, σ), activity (τ, MET), food intake (E_in), sleep duration (s), and elapsed time (t). The Resting Metabolic Rate, Daily Activity Burn, Thermic Effect of Food, and Sleep Deprivation Effect blocks feed the Energy Balance block, whose daily energy deficit D drives the Body Mass Change block. The Glycogen + Water Swing ΔM_gly is added to that body mass to give the measured body mass m, which is fed back through the 7-Day Rolling Average as m̄ to the Resting Metabolic Rate, Daily Activity Burn, and Glycogen + Water Swing blocks.</figcaption>
+<figcaption>Fig. 1. Block diagram of the human metabolic system model; the shaded region marks the system boundary. External inputs enter from the left: height, age, and sex (h, a, σ), activity (τ, MET), food intake (E_in), sleep duration (s), and elapsed time (t). The Basal Metabolic Rate, Activity Energy Expenditure, Thermic Effect of Food, and Sleep Deprivation Effect blocks feed the Energy Balance block, whose daily energy deficit D drives the Body Mass Change block. The Glycogen + Water Swing ΔM_gly is added to that body mass to give the measured body mass m, which is fed back through the 7-Day Rolling Average as m̄ to the Basal Metabolic Rate, Activity Energy Expenditure, and Glycogen + Water Swing blocks.</figcaption>
 </figure>
