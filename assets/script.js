@@ -254,6 +254,10 @@ function calorieTargetDetail(bodyMassKg, age) {
 const WEEKLY_FAT_LOSS_PCT_FLOOR = 0.5;
 const WEEKLY_FAT_LOSS_PCT_CEILING = 1;
 
+// D as a share of BMR — above this the deficit is deep enough, relative to
+// resting burn, to warrant flagging in the sheet.
+const DEFICIT_BMR_PCT_CEILING = 20;
+
 function weeklyFatLossPct(weeklyFatLossKg, bodyMassKg) {
   if (weeklyFatLossKg === null || bodyMassKg === null || bodyMassKg <= 0) return null;
   return Math.round((weeklyFatLossKg / bodyMassKg) * 10000) / 100;
@@ -1244,7 +1248,8 @@ function renderCorrectionFields(plan) {
   const { pctPerWeek, pctCap } = readAdaptationInputs();
 
   if (plan === null) {
-    ['formula-bmr', 'formula-activity-kcal', 'formula-maintenance', 'formula-deficit', bmrEl, plateauEl].forEach((id) => setComputedField(id, '—'));
+    ['formula-bmr', 'formula-activity-kcal', 'formula-maintenance', 'formula-deficit', 'formula-deficit-bmr-pct', bmrEl, plateauEl].forEach((id) => setComputedField(id, '—'));
+    document.getElementById('formula-deficit-bmr-pct').classList.remove('formula-pct-over');
     renderSleepDeprivationField(null);
     return [];
   }
@@ -1259,6 +1264,15 @@ function renderCorrectionFields(plan) {
   setComputedField('formula-activity-kcal', String(Math.round(activityKcal)));
   setComputedField('formula-maintenance', String(Math.round(bmr + activityKcal)));
   setComputedField('formula-deficit', String(Math.round(deficit)));
+  const deficitBmrPctEl = document.getElementById('formula-deficit-bmr-pct');
+  if (bmr) {
+    const deficitBmrPct = Math.round(((bmr - intakeKcal) / bmr) * 1000) / 10;
+    setComputedField('formula-deficit-bmr-pct', String(deficitBmrPct));
+    deficitBmrPctEl.classList.toggle('formula-pct-over', deficitBmrPct > DEFICIT_BMR_PCT_CEILING);
+  } else {
+    setComputedField('formula-deficit-bmr-pct', '—');
+    deficitBmrPctEl.classList.remove('formula-pct-over');
+  }
 
   if (pctPerWeek === null || pctCap === null || bmr === null) {
     [bmrEl, plateauEl].forEach((id) => setComputedField(id, '—'));

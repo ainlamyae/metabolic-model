@@ -193,6 +193,12 @@
         <input type="text" id="formula-ein" inputmode="decimal">
         <span class="formula-unit">kcal</span>
     </label>
+    <label class="formula-row" title="How far E_in sits below BMR, as a percentage of BMR — D_bmr% = (BMR − E_in) / BMR × 100. Not editable: it is derived from BMR and E_in above.">
+        <span class="formula-sym">D_bmr%</span>
+        <span class="formula-name">daily deficit, as a share of BMR</span>
+        <input type="text" id="formula-deficit-bmr-pct" inputmode="decimal" readonly>
+        <span class="formula-unit">%</span>
+    </label>
     <!-- Marks the end of the calorie-solve block, E_in, before the journey block
          (t, dates) starts below. -->
     <hr class="formula-divider" title="TEF is already built into E_in above — the identity is solved with f in the denominator, not summed — so it is not a further deficit to subtract on top of it.">
