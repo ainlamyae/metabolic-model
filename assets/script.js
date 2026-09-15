@@ -26,7 +26,7 @@ function getSettingString(key, fallback) {
 // ---------------------------------------------------------------------------
 
 const BODY_MASS_TARGET_KG_DEFAULT = 70;
-const ACTIVITY_TARGET_MIN_DEFAULT = 70;
+const ACTIVITY_TARGET_MIN_DEFAULT = 100;
 
 // Protein per kg of LEAN mass, not total mass. 1.8-2.2 spans what the
 // resistance-training literature supports for holding lean mass in an energy
@@ -415,6 +415,10 @@ const DEFAULT_BODY_MASS_KG = 82;
 const DEFAULT_HEIGHT_CM = 170;
 const DEFAULT_AGE = 30;
 const DEFAULT_SEX = 'male';
+// Healthy body mass defaults from BMI rather than a fixed kg figure, so it
+// scales with whatever height is typed — 22.5 sits at the midpoint of the
+// 20-25 healthy band, comfortably inside the WHO 18.5-24.9 range too.
+const BMI_TARGET_DEFAULT = 22.5;
 
 const FORMULA_FIELDS = [
   { key: 'KCAL_PER_MET_KG_MIN', inputId: 'formula-met-o2', fallback: () => MET_ML_O2_PER_KG_MIN_DEFAULT },
@@ -2570,6 +2574,9 @@ function loadDefaultInputs() {
   document.getElementById('formula-height').value = DEFAULT_HEIGHT_CM;
   document.getElementById('formula-age').value = DEFAULT_AGE;
   document.getElementById('formula-sex').value = DEFAULT_SEX;
+  // BMI_des is the typed default (targetMassKnownField below), so m_des is
+  // left for syncTargetMassFromBmi() to fill in from it and the height above.
+  document.getElementById('formula-target-bmi').value = BMI_TARGET_DEFAULT;
 }
 
 function initSheet() {
@@ -2579,7 +2586,7 @@ function initSheet() {
   dualKnownField.TAU = 'ein';
   dualKnownField.DELTA_M = 'days';
   weeklyLossKnownField = 'kg';
-  targetMassKnownField = 'kg';
+  targetMassKnownField = 'bmi';
   document.querySelector('input[name="formula-bmr-formula"][value="mifflin"]').checked = true;
   loadDefaultInputs();
   applySolveForMode('EIN');
