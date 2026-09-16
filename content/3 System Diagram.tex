@@ -7,7 +7,7 @@
 
 \subsection{Human Metabolic System Diagram}
 
-The human metabolic system is a multi-input, single-output system: several inputs act simultaneously on a single output, the measured body mass m. Height, age, and sex (h, a, σ) are fixed parameters, whereas activity (τ, MET), food intake (E_in), and sleep duration (s) are controllable inputs, each entering the Energy Balance through its own path. Driving m toward the healthy body mass m_des therefore requires regulating all controllable inputs together; an input left uncontrolled acts as an unregulated disturbance on D that the remaining inputs cannot reliably compensate for, and the output drifts from its desire.
+The human metabolic system is a multi-input, single-output system: several inputs act simultaneously on a single output, the measured body mass m. Height, age, and sex (h, a, σ) are fixed parameters, whereas activity (τ, MET), total energy intake (TEI), and sleep duration (s) are controllable inputs, each entering the Energy Balance through its own path. Driving m toward the healthy body mass m_des therefore requires regulating all controllable inputs together; an input left uncontrolled acts as an unregulated disturbance on D that the remaining inputs cannot reliably compensate for, and the output drifts from its desire.
 
 \begin{figure}[htbp]
 \centering
@@ -28,10 +28,10 @@ The human metabolic system is a multi-input, single-output system: several input
 \node[block, below=of rolling] (bmr)   {Basal Metabolic Rate\\ \textcolor{gray}{$BMR$}};
 \node[block, below=of bmr]     (act)   {Activity Energy Expenditure\\ \textcolor{gray}{$AEE$}};
 \node[block, below=of act]     (tef)   {Thermic Effect of Food\\ \textcolor{gray}{$TEF$}};
-\node[block, below=of tef]     (sleep) {Sleep Deprivation Effect\\ \textcolor{gray}{$\delta$}};
+\node[block, below=of tef]     (sleep) {Sleep Deprivation Effect\\ \textcolor{gray}{$SD$}};
 
 \node[block, minimum height=24mm, right=12mm of $(act.east)!0.5!(tef.east)$, yshift=-4mm] (balance)
-  {Energy Balance\\ \textcolor{gray}{$D = E_{in} - (BMR + AEE + TEF)$}};
+  {Energy Balance\\ \textcolor{gray}{$D = TEI - (BMR + AEE + TEF)$}};
 \node[block, right=12mm of balance] (mass) {Body Mass Change\\ \textcolor{gray}{$m(t) = \bar{m} + D/\rho$}};
 \node[block, above=of mass]    (gly)  {Glycogen + Water Swing\\ \textcolor{gray}{$\Delta M_{gly}$}};
 \node[sum,   right=10mm of mass] (sum) {$+$};
@@ -51,7 +51,7 @@ The human metabolic system is a multi-input, single-output system: several input
 
 \draw[signal] ($(in-bmr)+(0,3mm)$) -- node[lbl, above, pos=0.35] {$h, a, \sigma$} ([yshift=3mm]bmr.west);
 \draw[signal] (in-act)   -- node[lbl, above, pos=0.35] {$\tau, MET$}       (act.west);
-\draw[signal] (in-tef)   -- node[lbl, above, pos=0.35] {$E_{in}$}          (tef.west);
+\draw[signal] (in-tef)   -- node[lbl, above, pos=0.35] {$TEI$}          (tef.west);
 \draw[signal] (in-sleep) -- node[lbl, above, pos=0.35] {$s$}               (sleep.west);
 \coordinate (t-branch) at ($(in-t)+(6mm,0)$);
 \node[branch] at (t-branch) {};
@@ -62,10 +62,10 @@ The human metabolic system is a multi-input, single-output system: several input
 \draw[signal] (bmr.east)   -| node[lbl, above, pos=0.25] {$BMR$}   (balance.north);
 \draw[signal] ([yshift=-3mm]act.east) -- node[lbl, above] {$AEE$} ([yshift=-3mm]act.east -| balance.west);
 \draw[signal] (tef.east) -- node[lbl, above] {$TEF$}   (tef.east -| balance.west);
-\draw[signal] (sleep.east) -| node[lbl, above, pos=0.25] {$\delta$} ([xshift=8mm]balance.south);
+\draw[signal] (sleep.east) -| node[lbl, above, pos=0.25] {$SD$} ([xshift=8mm]balance.south);
 \coordinate (ein-branch) at ($(tef.west)+(-4mm,0)$);
 \node[branch] at (ein-branch) {};
-\draw[signal] (ein-branch) |- node[lbl, above, pos=0.7] {$E_{in}$} ($(tef.south)!0.5!(sleep.north)$)
+\draw[signal] (ein-branch) |- node[lbl, above, pos=0.7] {$TEI$} ($(tef.south)!0.5!(sleep.north)$)
               -| ([xshift=-8mm]balance.south);
 \draw[signal] (balance.east) -- node[lbl, above] {$D$} (mass.west);
 
@@ -92,7 +92,7 @@ The human metabolic system is a multi-input, single-output system: several input
 \draw[signal] (mbar-bmr) |- ($(bmr.south)!0.5!(act.north)$) -| (act.north);
 
 \end{tikzpicture}
-\caption[Block diagram of the human metabolic system model.]{Block diagram of the human metabolic system model; the shaded region marks the system boundary. External inputs enter from the left: height, age, and sex ($h, a, \sigma$), activity ($\tau$, $MET$), food intake ($E_{in}$), sleep duration ($s$), and elapsed time ($t$). The Basal Metabolic Rate, Activity Energy Expenditure, Thermic Effect of Food, and Sleep Deprivation Effect blocks feed the Energy Balance block, whose daily energy deficit $D$ drives the Body Mass Change block. The Glycogen + Water Swing $\Delta M_{gly}$ is added to that body mass to give the measured body mass $m$, which is fed back through the 7-Day Rolling Average as $\bar{m}$ to the Basal Metabolic Rate, Activity Energy Expenditure, and Glycogen + Water Swing blocks.}
+\caption[Block diagram of the human metabolic system model.]{Block diagram of the human metabolic system model; the shaded region marks the system boundary. External inputs enter from the left: height, age, and sex ($h, a, \sigma$), activity ($\tau$, $MET$), total energy intake ($TEI$), sleep duration ($s$), and elapsed time ($t$). The Basal Metabolic Rate, Activity Energy Expenditure, Thermic Effect of Food, and Sleep Deprivation Effect blocks feed the Energy Balance block, whose daily energy deficit $D$ drives the Body Mass Change block. The Glycogen + Water Swing $\Delta M_{gly}$ is added to that body mass to give the measured body mass $m$, which is fed back through the 7-Day Rolling Average as $\bar{m}$ to the Basal Metabolic Rate, Activity Energy Expenditure, and Glycogen + Water Swing blocks.}
 \label{fig_systemdiagram}
 \end{figure}
 

@@ -2,7 +2,7 @@
 % document that supplies \documentclass, packages (amsmath, unicode-math +
 % fontspec for the raw Unicode math symbols below — compile the master with
 % xelatex or lualatex), \begin{document}/\end{document}, and its own
-% \bibliographystyle/\bibliography pointing at "8 References.bib".
+% \bibliographystyle/\bibliography pointing at "9 References.bib".
 
 \section{Human Metabolic System Model}
 
@@ -98,25 +98,25 @@ D = \frac{Δm × ρ}{7 × η}
 
 \subsubsection{Thermic Effect of Food}
 
-Digesting, absorbing, and metabolizing food itself consumes energy — the thermic effect of food (TEF) — typically amounting to 5–15\% of daily energy expenditure on a mixed diet, with protein eliciting the largest effect per calorie \cite{ref_westerterp2004}. The thermic cost differs by macronutrient — commonly cited figures put protein near 20–30\% of its own calories, carbohydrate near 5–10\%, and fat near 0–3\% \cite{ref_westerterp2004} — but here TEF is modeled as a single fixed share f of the desire daily intake (E_in, introduced below) rather than a macronutrient-weighted sum, as given in eqn.~\eqref{eqn_tefq}, and is folded into the intake identity by solving rather than by simple addition.
+Digesting, absorbing, and metabolizing food itself consumes energy — the thermic effect of food (TEF) — typically amounting to 5–15\% of daily energy expenditure on a mixed diet, with protein eliciting the largest effect per calorie \cite{ref_westerterp2004}. The thermic cost differs by macronutrient — commonly cited figures put protein near 20–30\% of its own calories, carbohydrate near 5–10\%, and fat near 0–3\% \cite{ref_westerterp2004} — but here TEF is modeled as a single fixed share f of the total energy intake (TEI, introduced below) rather than a macronutrient-weighted sum, as given in eqn.~\eqref{eqn_tefq}, and is folded into the intake identity by solving rather than by simple addition.
 
 \begin{equation}
 \label{eqn_tefq}
-TEF = f × E_{in}
+TEF = f × TEI
 \end{equation}
 
 \subsubsection{Desire Daily Intake}
 
-The desire daily intake E_in is the calorie level that, net of the thermic effect of food, still leaves the desired deficit D on top of maintenance (BMR + AEE). Because TEF is itself a share of E_in rather than a fixed amount, the identity is solved for E_in directly — placing (1 − f) in the denominator — instead of treating TEF as a further subtraction, as given in eqn.~\eqref{eqn_eink}.
+The desire daily intake TEI is the calorie level that, net of the thermic effect of food, still leaves the desired deficit D on top of maintenance (BMR + AEE). Because TEF is itself a share of TEI rather than a fixed amount, the identity is solved for TEI directly — placing (1 − f) in the denominator — instead of treating TEF as a further subtraction, as given in eqn.~\eqref{eqn_eink}.
 
 \begin{equation}
 \label{eqn_eink}
-E_{in} = BMR + AEE + TEF − D = \frac{BMR + AEE − D}{1 − f}
+TEI = BMR + AEE + TEF − D = \frac{BMR + AEE − D}{1 − f}
 \end{equation}
 
 \subsection{Maintenance and Mass Trajectory}
 
-Maintenance energy expenditure M(m̄) = A + B×m̄ is affine in body mass under either basal-metabolic-rate formula, with the coefficients A and B given in eqns.~\eqref{eqn_amif}–\eqref{eqn_bkat}. Under Katch-McArdle, c\_m, c\_h, and c\_0 are the same sex-specific Boer coefficients from eqn.~\eqref{eqn_lbmm}/\eqref{eqn_lbmf} (0.407, 0.267, −19.2 for males; 0.252, 0.473, −48.3 for females), substituted in place of LBM so A and B stay linear in h alone. Holding intake E_in fixed then drives body mass toward a single equilibrium m∞ = (E_in − A)/B, as given in eqn.~\eqref{eqn_meqm}, and mass approaches that equilibrium exponentially over the elapsed time t (in days) rather than linearly — the same first-order dynamics used to model human body-weight change under sustained energy imbalance \cite{ref_chow2008} — as given in eqn.~\eqref{eqn_mdec}, with t to a healthy mass following from inverting that decay in eqn.~\eqref{eqn_tday}.
+Maintenance energy expenditure M(m̄) = A + B×m̄ is affine in body mass under either basal-metabolic-rate formula, with the coefficients A and B given in eqns.~\eqref{eqn_amif}–\eqref{eqn_bkat}. Under Katch-McArdle, c\_m, c\_h, and c\_0 are the same sex-specific Boer coefficients from eqn.~\eqref{eqn_lbmm}/\eqref{eqn_lbmf} (0.407, 0.267, −19.2 for males; 0.252, 0.473, −48.3 for females), substituted in place of LBM so A and B stay linear in h alone. Holding intake TEI fixed then drives body mass toward a single equilibrium m∞ = (TEI − A)/B, as given in eqn.~\eqref{eqn_meqm}, and mass approaches that equilibrium exponentially over the elapsed time t (in days) rather than linearly — the same first-order dynamics used to model human body-weight change under sustained energy imbalance \cite{ref_chow2008} — as given in eqn.~\eqref{eqn_mdec}, with t to a healthy mass following from inverting that decay in eqn.~\eqref{eqn_tday}.
 
 When a fixed weekly percentage of body mass Δm\% is held instead of a fixed intake, the loop closes differently: mass is re-derived from itself every period rather than converging on an equilibrium, giving proportional decay with no plateau, as given in eqns.~\eqref{eqn_mprp}–\eqref{eqn_tprp}.
 
@@ -140,7 +140,7 @@ B = \frac{21.6×c_{m} + (MET × τ × κ / ε)}{1 − f} \quad \text{under Katch
 \end{equation}
 \begin{equation}
 \label{eqn_meqm}
-m∞ = \frac{E_{in} − A}{B}
+m∞ = \frac{TEI − A}{B}
 \end{equation}
 \begin{equation}
 \label{eqn_mdec}
@@ -180,7 +180,7 @@ B_{adp} = \frac{21.6×c_{m}×(1 − λt) + (MET × τ × κ / ε)}{1 − f} \qua
 \end{equation}
 \begin{equation}
 \label{eqn_mplt}
-m∞_{adp} = \frac{E_{in} − A_{adp}}{B_{adp}}
+m∞_{adp} = \frac{TEI − A_{adp}}{B_{adp}}
 \end{equation}
 
 \subsection{Glycogen and Water Storage}
@@ -198,60 +198,4 @@ m_{gly} = g_{musc} × m_{musc} + g_{liver}
 \begin{equation}
 \label{eqn_dmgl}
 ΔM_{gly} = \frac{m_{gly} × (1 + r)}{1000}
-\end{equation}
-
-\subsection{Dietary Requirements}
-
-The remaining four bands — protein, dietary fiber, fat, and carbohydrate — set healthy daily ranges for diet composition rather than for the size of the energy deficit itself, each scaled to lean mass or to intake, in the four subsections below.
-
-\subsubsection{Protein Requirements}
-
-Protein needs for energy-restricted, resistance-trained individuals with low body fat are estimated at a floor p\_min and ceiling p\_max of 2.3–3.1 g per kg of fat-free (lean) mass per day, scaled upward with the severity of caloric restriction and leanness \cite{ref_helms2014}. The corresponding lower and upper healthy daily protein amounts, P\_min and P\_max, are given in eqn.~\eqref{eqn_pmin} and eqn.~\eqref{eqn_pmax}.
-
-\begin{equation}
-\label{eqn_pmin}
-P_{min} = p_{min} × LBM
-\end{equation}
-\begin{equation}
-\label{eqn_pmax}
-P_{max} = p_{max} × LBM
-\end{equation}
-
-\subsubsection{Dietary Fiber Requirements}
-
-Dietary fiber intake is recommended relative to energy intake via a floor coefficient b\_min of roughly 14 g per 1,000 kcal consumed, while a practical upper ceiling b\_max is instead scaled to body weight, per the USDA Dietary Guidelines for Americans \cite{ref_usda2020}. These two different bases give the lower and upper healthy daily dietary fiber amounts, F\_min and F\_max, in eqn.~\eqref{eqn_fmin} and eqn.~\eqref{eqn_fmax} respectively.
-
-\begin{equation}
-\label{eqn_fmin}
-F_{min} = b_{min} × \frac{E_{in}}{1000}
-\end{equation}
-\begin{equation}
-\label{eqn_fmax}
-F_{max} = b_{max} × m̄
-\end{equation}
-
-\subsubsection{Fat Requirements}
-
-Fat intake is recommended within an Acceptable Macronutrient Distribution Range (AMDR) of 20–35\% of total energy intake for adults \cite{ref_iom2005}, the floor and ceiling percentages denoted k\_min and k\_max. Converted to grams at fat's fixed energy density of 9 kcal/g, this range gives the lower and upper healthy daily fat amounts, G\_min and G\_max, in eqn.~\eqref{eqn_gmin} and eqn.~\eqref{eqn_gmax}.
-
-\begin{equation}
-\label{eqn_gmin}
-G_{min} = \frac{(k_{min}/100) × E_{in}}{9}
-\end{equation}
-\begin{equation}
-\label{eqn_gmax}
-G_{max} = \frac{(k_{max}/100) × E_{in}}{9}
-\end{equation}
-
-\subsubsection{Carbohydrate Requirements}
-
-Carbohydrate intake carries the same AMDR structure, recommended at 45–65\% of total energy intake for adults \cite{ref_iom2005}, the floor and ceiling percentages denoted q\_min and q\_max. Converted to grams at carbohydrate's fixed energy density of 4 kcal/g, this range gives the lower and upper healthy daily carbohydrate amounts, C\_min and C\_max, in eqn.~\eqref{eqn_cmin} and eqn.~\eqref{eqn_cmax}.
-
-\begin{equation}
-\label{eqn_cmin}
-C_{min} = \frac{(q_{min}/100) × E_{in}}{4}
-\end{equation}
-\begin{equation}
-\label{eqn_cmax}
-C_{max} = \frac{(q_{max}/100) × E_{in}}{4}
 \end{equation}

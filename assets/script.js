@@ -48,7 +48,7 @@ const FIBER_G_PER_KG_MAX_DEFAULT = 0.5;
 // Medicine's Acceptable Macronutrient Distribution Range for adults (Dietary Reference
 // Intakes for Energy, Carbohydrate, Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino
 // Acids, 2005), the same range the USDA Dietary Guidelines for Americans carries forward.
-// Both ends scale off E_in (percent of intake calories), unlike fiber's floor/ceiling on two
+// Both ends scale off TEI (percent of intake calories), unlike fiber's floor/ceiling on two
 // different bases, since that's how the AMDR itself is defined.
 const FAT_PCT_OF_KCAL_MIN_DEFAULT = 20;
 const FAT_PCT_OF_KCAL_MAX_DEFAULT = 35;
@@ -59,7 +59,7 @@ const KCAL_PER_G_FAT = 9;
 // The carb band's two coefficients — 45-65% of total energy from carbohydrate is the same
 // AMDR report's range for carbohydrate (Dietary Reference Intakes for Energy, Carbohydrate,
 // Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids, 2005), also carried forward
-// by the USDA Dietary Guidelines for Americans. Both ends scale off E_in, same shape as the
+// by the USDA Dietary Guidelines for Americans. Both ends scale off TEI, same shape as the
 // fat band above.
 const CARB_PCT_OF_KCAL_MIN_DEFAULT = 45;
 const CARB_PCT_OF_KCAL_MAX_DEFAULT = 65;
@@ -144,7 +144,7 @@ function bmrKcal(bodyMassKg, heightCm, age, sex, formula = bmrFormula()) {
     : mifflinStJeorBmr(bodyMassKg, heightCm, age, sex);
 }
 
-// Thermic effect of food: E_in = (BMR + E_act − D) / (1 − f). Defaults to 0, which
+// Thermic effect of food: TEI = (BMR + E_act − D) / (1 − f). Defaults to 0, which
 // is the plain sum with no digestion cost counted.
 const TEF_PERCENT_KEY = 'TEF_PERCENT_OF_INTAKE';
 const TEF_PERCENT_DEFAULT = 10;
@@ -347,7 +347,7 @@ function maintenanceAffineCoefficients({
 }
 
 // Where the mass actually levels off once BMR has adapted — the same
-// m∞ = (E_in − A)/B, with the BMR half of each coefficient scaled by (1 − λt).
+// m∞ = (TEI − A)/B, with the BMR half of each coefficient scaled by (1 − λt).
 function adaptedPlateauKg(intakeKcal, coefficients, adaptFraction) {
   const { aBmr, bBmr, activityPerKg, tefDivisor: divisor } = coefficients;
   const remaining = 1 - adaptFraction;
@@ -357,7 +357,7 @@ function adaptedPlateauKg(intakeKcal, coefficients, adaptFraction) {
 
 const BODY_MASS_AT_TARGET_TOLERANCE_KG = 0.1;
 
-// The constant-intake journey — closed form of dm/dt = (E_in − A − B·m)/ρ.
+// The constant-intake journey — closed form of dm/dt = (TEI − A − B·m)/ρ.
 function projectTargetDays({
   intakeKcal, bodyMassKg, heightCm, age, sex, met, tau, kappa, targetKg, formula, tef,
 }) {
@@ -478,7 +478,7 @@ const CARB_FORMULA_FIELDS = [
 ];
 
 const FORMULA_SOLVE_FIELD_ID = {
-  EIN: 'formula-ein',
+  TEI: 'formula-tei',
   TARGET_MASS: 'formula-target',
   TAU: 'formula-activity-min',
   DELTA_M: 'formula-weekly-loss',
@@ -487,14 +487,14 @@ const FORMULA_SOLVE_FIELD_ID = {
 const FORMULA_TOGGLE_IDS = [...Object.values(FORMULA_SOLVE_FIELD_ID), 'formula-days', 'formula-eta', 'formula-weekly-loss-pct', 'formula-target-bmi'];
 
 const FORMULA_COMPUTED_IDS = {
-  EIN: ['formula-ein', 'formula-days', 'formula-eta'],
+  TEI: ['formula-tei', 'formula-days', 'formula-eta'],
   TARGET_MASS: ['formula-target', 'formula-target-bmi'],
-  FIXED_PCT: ['formula-weekly-loss', 'formula-ein', 'formula-days', 'formula-eta'],
+  FIXED_PCT: ['formula-weekly-loss', 'formula-tei', 'formula-days', 'formula-eta'],
 };
 
-// For TAU and DELTA_M, either E_in or t can be the known that drives the solve
+// For TAU and DELTA_M, either TEI or t can be the known that drives the solve
 // — whichever you last typed into.
-const dualKnownField = { TAU: 'ein', DELTA_M: 'days' };
+const dualKnownField = { TAU: 'tei', DELTA_M: 'days' };
 
 let weeklyLossKnownField = 'kg';   // 'kg' | 'pct'
 let targetMassKnownField = 'kg';   // 'kg' | 'bmi'
@@ -528,14 +528,14 @@ function weeklyLossPctInPlay(weeklyLossKg, bodyMassKg) {
 
 function computedIdsForMode(mode) {
   if (mode === 'TAU') {
-    return dualKnownField.TAU === 'ein'
+    return dualKnownField.TAU === 'tei'
       ? ['formula-activity-min', 'formula-days', 'formula-eta']
-      : ['formula-activity-min', 'formula-ein'];
+      : ['formula-activity-min', 'formula-tei'];
   }
   if (mode === 'DELTA_M') {
-    return dualKnownField.DELTA_M === 'ein'
+    return dualKnownField.DELTA_M === 'tei'
       ? ['formula-weekly-loss', 'formula-weekly-loss-pct', 'formula-days', 'formula-eta']
-      : ['formula-weekly-loss', 'formula-weekly-loss-pct', 'formula-ein'];
+      : ['formula-weekly-loss', 'formula-weekly-loss-pct', 'formula-tei'];
   }
   return FORMULA_COMPUTED_IDS[mode];
 }
@@ -544,7 +544,7 @@ function currentSolveFor() {
   return document.querySelector('input[name="formula-solve-for"]:checked').value;
 }
 
-const FORMULA_DUAL_FIELD_IDS = ['formula-ein', 'formula-days', 'formula-eta'];
+const FORMULA_DUAL_FIELD_IDS = ['formula-tei', 'formula-days', 'formula-eta'];
 
 function applySolveForMode(mode) {
   const computed = new Set(computedIdsForMode(mode));
@@ -630,11 +630,11 @@ function readFormulaInputs() {
   // Blank exactly when the current mode is about to compute it — not
   // invalid, just not typed yet.
   const computed = computedIdsForMode(mode);
-  const einIsTyped = !computed.includes('formula-ein');
+  const teiIsTyped = !computed.includes('formula-tei');
   const daysIsTyped = !computed.includes('formula-days');
 
-  const einKcal = einIsTyped ? formulaNumber('formula-ein') : null;
-  if (einIsTyped && einKcal === null) invalid.push('E_in (target daily intake)');
+  const teiKcal = teiIsTyped ? formulaNumber('formula-tei') : null;
+  if (teiIsTyped && teiKcal === null) invalid.push('TEI (target daily intake)');
 
   const days = daysIsTyped ? formulaNumber('formula-days') : null;
   if (daysIsTyped && days === null) invalid.push('t (days)');
@@ -643,13 +643,13 @@ function readFormulaInputs() {
     invalid.push('Δm% (weekly fat loss, % of body mass)');
   }
 
-  return { mode, overrides, preview, bodyMassKg, heightCm, age, sex, formula, einKcal, days, invalid };
+  return { mode, overrides, preview, bodyMassKg, heightCm, age, sex, formula, teiKcal, days, invalid };
 }
 
 // The formula with every symbol replaced by the figure actually used.
 //
 // Δm%, TEF and BMI_des are NOT read here: each sits inside `rows` itself, appended by the
-// mode that built it, at the spot the legend puts it (Δm% by D, TEF by E_in, BMI_des by m_des),
+// mode that built it, at the spot the legend puts it (Δm% by D, TEF by TEI, BMI_des by m_des),
 // rather than tacked on after everything mode-specific is done.
 function renderFormulaSubstituted(rows, plan = null) {
   const el = document.getElementById('formula-substituted');
@@ -666,7 +666,7 @@ function renderFormulaSubstituted(rows, plan = null) {
   } catch (err) {
     console.error('Protein band failed to render', err);
   }
-  // Independent of the protein block above — reads m̄ and E_in, not LBM — but guarded
+  // Independent of the protein block above — reads m̄ and TEI, not LBM — but guarded
   // separately for the same reason every block here is: one throwing can't take the others
   // down with it.
   let fiberRows = [];
@@ -675,7 +675,7 @@ function renderFormulaSubstituted(rows, plan = null) {
   } catch (err) {
     console.error('Fiber band failed to render', err);
   }
-  // Independent of the fiber block above too — reads only E_in, no body mass — but guarded
+  // Independent of the fiber block above too — reads only TEI, no body mass — but guarded
   // separately for the same reason.
   let fatRows = [];
   try {
@@ -683,7 +683,7 @@ function renderFormulaSubstituted(rows, plan = null) {
   } catch (err) {
     console.error('Fat band failed to render', err);
   }
-  // Independent of the fat block above too — reads only E_in, no body mass — but guarded
+  // Independent of the fat block above too — reads only TEI, no body mass — but guarded
   // separately for the same reason.
   let carbRows = [];
   try {
@@ -729,7 +729,7 @@ function setEtaNote(text) {
 // unreachable branch, to tell two different failures apart: an equilibrium
 // past the target (a real plateau, just short of it) reads very differently
 // from an equilibrium on the WRONG side of it — e.g. a target above m̄ with a
-// typed E_in still below maintenance, which is a deficit heading away from a
+// typed TEI still below maintenance, which is a deficit heading away from a
 // gain goal, not a diet that merely falls short. Omitted by the 'pct' journey,
 // which already carries its own reason string, and by callers where t itself
 // was typed rather than solved for.
@@ -759,7 +759,7 @@ function renderFormulaDaysField(proj, direction = null) {
       const wantsGain = targetKg > bodyMassKg;
       const headingTowardTarget = wantsGain ? proj.equilibriumKg > bodyMassKg : proj.equilibriumKg < bodyMassKg;
       if (!headingTowardTarget) {
-        setEtaNote(`never — E_in needs to be ${wantsGain ? 'above' : 'below'} maintenance to reach a target ${wantsGain ? 'above' : 'below'} m̄ (a ${wantsGain ? 'negative' : 'positive'} Δm)`);
+        setEtaNote(`never — TEI needs to be ${wantsGain ? 'above' : 'below'} maintenance to reach a target ${wantsGain ? 'above' : 'below'} m̄ (a ${wantsGain ? 'negative' : 'positive'} Δm)`);
         return;
       }
     }
@@ -772,7 +772,7 @@ function renderFormulaDaysField(proj, direction = null) {
 }
 
 // The one case with no closed form: TAU with a typed day count instead of a
-// typed E_in. Solved by bisection — h(B) changes sign at most once for a
+// typed TEI. Solved by bisection — h(B) changes sign at most once for a
 // physically reachable target.
 function solveBForTypedDays({ deficit, massToLose, t, rho, minB = 10 }) {
   const h = (B) => deficit * (1 - Math.exp((-B * t) / rho)) - massToLose * B;
@@ -859,20 +859,20 @@ function renderProteinFields() {
 // thumb) and a ceiling scaled to body weight (0.5 g/kg) — two different bases, unlike
 // protein's single LBM, so neither end rides on a box the other computes.
 //
-// Reads formula-ein directly rather than re-deriving it: by the time renderFiberFields runs
+// Reads formula-tei directly rather than re-deriving it: by the time renderFiberFields runs
 // (from renderFormulaSubstituted, after the calorie half of the sheet), that box already
-// holds this render's E_in — typed or solved, in every mode — so this is the one read that
+// holds this render's TEI — typed or solved, in every mode — so this is the one read that
 // can't disagree with what the sheet just showed.
 function readFiberFormula() {
   const bodyMassKg = formulaBodyMassKg();
-  const einKcal = formulaNumber('formula-ein');
+  const teiKcal = formulaNumber('formula-tei');
   const perKcalMin = formulaNumber('formula-fiber-per-1000kcal-min');
   const perKgMax = formulaNumber('formula-fiber-per-kg-max');
-  if (bodyMassKg === null || einKcal === null || perKcalMin === null || perKgMax === null) return null;
+  if (bodyMassKg === null || teiKcal === null || perKcalMin === null || perKgMax === null) return null;
 
   return {
-    bodyMassKg, einKcal, perKcalMin, perKgMax,
-    minG: Math.round(perKcalMin * (einKcal / 1000)),
+    bodyMassKg, teiKcal, perKcalMin, perKgMax,
+    minG: Math.round(perKcalMin * (teiKcal / 1000)),
     maxG: Math.round(perKgMax * bodyMassKg),
   };
 }
@@ -887,34 +887,34 @@ function renderFiberFields() {
     return [];
   }
 
-  const { bodyMassKg, einKcal, perKcalMin, perKgMax, minG, maxG } = fiber;
+  const { bodyMassKg, teiKcal, perKcalMin, perKgMax, minG, maxG } = fiber;
   setComputedField('formula-fiber-min', String(minG));
   setComputedField('formula-fiber-max', String(maxG));
 
   return [
-    ['F_min', `${perKcalMin} × (${einKcal} / 1000)  =  ${minG} g/day`],
+    ['F_min', `${perKcalMin} × (${teiKcal} / 1000)  =  ${minG} g/day`],
     ['F_max', `${perKgMax} × ${bodyMassKg}  =  ${maxG} g/day`],
   ];
 }
 
-// The fat band: both ends a share of E_in (20-35%, the IOM's Acceptable Macronutrient
+// The fat band: both ends a share of TEI (20-35%, the IOM's Acceptable Macronutrient
 // Distribution Range for adults) converted to grams at fat's fixed 9 kcal/g energy density —
-// unlike fiber's two different bases, both k_min and k_max scale off the same E_in, since
+// unlike fiber's two different bases, both k_min and k_max scale off the same TEI, since
 // that's how the AMDR itself is defined.
 //
-// Reads formula-ein directly, same reason readFiberFormula does: by the time
+// Reads formula-tei directly, same reason readFiberFormula does: by the time
 // renderFatFields runs (from renderFormulaSubstituted, after the calorie half of the sheet),
-// that box already holds this render's E_in — typed or solved, in every mode.
+// that box already holds this render's TEI — typed or solved, in every mode.
 function readFatFormula() {
-  const einKcal = formulaNumber('formula-ein');
+  const teiKcal = formulaNumber('formula-tei');
   const pctMin = formulaNumber('formula-fat-pct-min');
   const pctMax = formulaNumber('formula-fat-pct-max');
-  if (einKcal === null || pctMin === null || pctMax === null) return null;
+  if (teiKcal === null || pctMin === null || pctMax === null) return null;
 
   return {
-    einKcal, pctMin, pctMax,
-    minG: Math.round((pctMin / 100) * einKcal / KCAL_PER_G_FAT),
-    maxG: Math.round((pctMax / 100) * einKcal / KCAL_PER_G_FAT),
+    teiKcal, pctMin, pctMax,
+    minG: Math.round((pctMin / 100) * teiKcal / KCAL_PER_G_FAT),
+    maxG: Math.round((pctMax / 100) * teiKcal / KCAL_PER_G_FAT),
   };
 }
 
@@ -928,33 +928,33 @@ function renderFatFields() {
     return [];
   }
 
-  const { einKcal, pctMin, pctMax, minG, maxG } = fat;
+  const { teiKcal, pctMin, pctMax, minG, maxG } = fat;
   setComputedField('formula-fat-min', String(minG));
   setComputedField('formula-fat-max', String(maxG));
 
   return [
-    ['G_min', `(${pctMin}% × ${einKcal}) / ${KCAL_PER_G_FAT}  =  ${minG} g/day`],
-    ['G_max', `(${pctMax}% × ${einKcal}) / ${KCAL_PER_G_FAT}  =  ${maxG} g/day`],
+    ['G_min', `(${pctMin}% × ${teiKcal}) / ${KCAL_PER_G_FAT}  =  ${minG} g/day`],
+    ['G_max', `(${pctMax}% × ${teiKcal}) / ${KCAL_PER_G_FAT}  =  ${maxG} g/day`],
   ];
 }
 
-// The carb band: both ends a share of E_in (45-65%, the IOM's Acceptable Macronutrient
+// The carb band: both ends a share of TEI (45-65%, the IOM's Acceptable Macronutrient
 // Distribution Range for adults) converted to grams at carbohydrate's fixed 4 kcal/g energy
 // density — same shape as readFatFormula, just the AMDR's other end and Atwater factor.
 //
-// Reads formula-ein directly, same reason readFatFormula does: by the time renderCarbFields
+// Reads formula-tei directly, same reason readFatFormula does: by the time renderCarbFields
 // runs (from renderFormulaSubstituted, after the calorie half of the sheet), that box
-// already holds this render's E_in — typed or solved, in every mode.
+// already holds this render's TEI — typed or solved, in every mode.
 function readCarbFormula() {
-  const einKcal = formulaNumber('formula-ein');
+  const teiKcal = formulaNumber('formula-tei');
   const pctMin = formulaNumber('formula-carb-pct-min');
   const pctMax = formulaNumber('formula-carb-pct-max');
-  if (einKcal === null || pctMin === null || pctMax === null) return null;
+  if (teiKcal === null || pctMin === null || pctMax === null) return null;
 
   return {
-    einKcal, pctMin, pctMax,
-    minG: Math.round((pctMin / 100) * einKcal / KCAL_PER_G_CARB),
-    maxG: Math.round((pctMax / 100) * einKcal / KCAL_PER_G_CARB),
+    teiKcal, pctMin, pctMax,
+    minG: Math.round((pctMin / 100) * teiKcal / KCAL_PER_G_CARB),
+    maxG: Math.round((pctMax / 100) * teiKcal / KCAL_PER_G_CARB),
   };
 }
 
@@ -968,13 +968,13 @@ function renderCarbFields() {
     return [];
   }
 
-  const { einKcal, pctMin, pctMax, minG, maxG } = carb;
+  const { teiKcal, pctMin, pctMax, minG, maxG } = carb;
   setComputedField('formula-carb-min', String(minG));
   setComputedField('formula-carb-max', String(maxG));
 
   return [
-    ['C_min', `(${pctMin}% × ${einKcal}) / ${KCAL_PER_G_CARB}  =  ${minG} g/day`],
-    ['C_max', `(${pctMax}% × ${einKcal}) / ${KCAL_PER_G_CARB}  =  ${maxG} g/day`],
+    ['C_min', `(${pctMin}% × ${teiKcal}) / ${KCAL_PER_G_CARB}  =  ${minG} g/day`],
+    ['C_max', `(${pctMax}% × ${teiKcal}) / ${KCAL_PER_G_CARB}  =  ${maxG} g/day`],
   ];
 }
 
@@ -1156,19 +1156,19 @@ function formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }
   ];
 }
 
-function formulaEinRows(coefficients, { bmr, activityKcal, deficit, einKcal }) {
+function formulaTeiRows(coefficients, { bmr, activityKcal, deficit, teiKcal }) {
   const divisor = coefficients.tefDivisor;
   const sum = `${Math.round(bmr)} + ${Math.round(activityKcal)} − ${Math.round(deficit)}`;
-  if (divisor === 1) return [['E_in', `${sum}  =  ${Math.round(einKcal)} kcal/day`]];
-  return [['E_in', `(${sum}) / ${Math.round(divisor * 1000) / 1000}  =  ${Math.round(einKcal)} kcal/day`]];
+  if (divisor === 1) return [['TEI', `${sum}  =  ${Math.round(teiKcal)} kcal/day`]];
+  return [['TEI', `(${sum}) / ${Math.round(divisor * 1000) / 1000}  =  ${Math.round(teiKcal)} kcal/day`]];
 }
 
-function formulaDeficitRows(coefficients, { bmr, activityKcal, einKcal, deficit }) {
+function formulaDeficitRows(coefficients, { bmr, activityKcal, teiKcal, deficit }) {
   const divisor = coefficients.tefDivisor;
   const head = `${Math.round(bmr)} + ${Math.round(activityKcal)} − `;
   const intake = divisor === 1
-    ? `${Math.round(einKcal)}`
-    : `${Math.round(einKcal)}×${Math.round(divisor * 1000) / 1000}`;
+    ? `${Math.round(teiKcal)}`
+    : `${Math.round(teiKcal)}×${Math.round(divisor * 1000) / 1000}`;
   return [['D', `${head}${intake}  =  ${Math.round(deficit)} kcal/day`]];
 }
 
@@ -1179,16 +1179,16 @@ function readAdaptationInputs() {
   };
 }
 
-// The TEF box and its trace row — reads formula-ein and f (formula-tef-pct) directly, same
-// reason readFiberFormula/readFatFormula do: by the time this runs, formula-ein already
+// The TEF box and its trace row — reads formula-tei and f (formula-tef-pct) directly, same
+// reason readFiberFormula/readFatFormula do: by the time this runs, formula-tei already
 // holds this render's value in every mode, so this can't disagree with what the sheet just
-// showed. Split out from renderCorrectionFields so it can sit right above E_in rather than
+// showed. Split out from renderCorrectionFields so it can sit right above TEI rather than
 // down with the adaptation pair.
 function readTefFormula() {
-  const einKcal = formulaNumber('formula-ein');
+  const teiKcal = formulaNumber('formula-tei');
   const tefPct = formulaNumber('formula-tef-pct');
-  if (einKcal === null || tefPct === null) return null;
-  return { einKcal, tefPct, tefKcal: Math.round(einKcal * (tefPct / 100)) };
+  if (teiKcal === null || tefPct === null) return null;
+  return { teiKcal, tefPct, tefKcal: Math.round(teiKcal * (tefPct / 100)) };
 }
 
 function renderTefField() {
@@ -1199,20 +1199,20 @@ function renderTefField() {
     return [];
   }
 
-  const { einKcal, tefPct, tefKcal } = tef;
+  const { teiKcal, tefPct, tefKcal } = tef;
   setComputedField('formula-tef', String(tefKcal));
   // Only when there is one: at f = 0 the identity is true and empty, and a row reading
   // "0 × 1163 = 0" is three columns of nothing.
   if (tefKcal <= 0) return [];
-  return [['TEF', `${tefPct}% × ${einKcal}  =  ${tefKcal} kcal/day`]];
+  return [['TEF', `${tefPct}% × ${teiKcal}  =  ${tefKcal} kcal/day`]];
 }
 
-// The `δ` box and its trace rows (η, δ) — always as a pair with the box, so the number shown
+// The `SD` box and its trace rows (η, SD) — always as a pair with the box, so the number shown
 // and the arithmetic behind it come from one call. `sleepInfo` is `{ weeklyFatLossKg,
 // rawDeficit, deficit, sleepDeprivationEffectKcal, factor, pctPerHour, planSleepHours,
-// sleepTargetHours }` — either calorieTargetDetail's own return (EIN/FIXED_PCT) or the
+// sleepTargetHours }` — either calorieTargetDetail's own return (TEI/FIXED_PCT) or the
 // equivalent object TAU builds locally from the same sleepAdjustedDeficitKcal call.
-// `null` in TARGET_MASS and DELTA_M: both those modes reverse-solve D FROM a typed E_in
+// `null` in TARGET_MASS and DELTA_M: both those modes reverse-solve D FROM a typed TEI
 // rather than building it from a target rate, so "how much bigger does D need to be" is a
 // question that doesn't arise there.
 function renderSleepDeprivationField(sleepInfo) {
@@ -1228,13 +1228,13 @@ function renderSleepDeprivationField(sleepInfo) {
   const factorRounded = Math.round(factor * 1000) / 1000;
   return [
     ['η', `1 − (${pctPerHour}/100) × max(0, ${sleepTargetHours} − ${planSleepHours})  =  ${factorRounded}`],
-    ['δ', `${Math.round(rawDeficit)} / ${factorRounded} − ${Math.round(rawDeficit)}  =  ${sleepDeprivationEffectKcal} kcal/day`],
+    ['SD', `${Math.round(rawDeficit)} / ${factorRounded} − ${Math.round(rawDeficit)}  =  ${sleepDeprivationEffectKcal} kcal/day`],
   ];
 }
 
 // The D row itself, in whichever form applies: the plain rate this sheet shows when sleep
 // isn't costing anything, or that same rate divided by η when it is — so a reader can trace
-// exactly where the extra kcal in δ above came from.
+// exactly where the extra kcal in SD above came from.
 function formulaDeficitTraceLine(sleepInfo) {
   const raw = `${sleepInfo.weeklyFatLossKg} × 7700 / 7`;
   if (sleepInfo.sleepDeprivationEffectKcal <= 0) return `${raw}  =  ${Math.round(sleepInfo.deficit)} kcal/day`;
@@ -1401,10 +1401,10 @@ function massTrajectoryAtDay(inputs, t) {
 // independently of which journey mode (intake vs weekly %) is driving the
 // mass curve itself, since these sheet fields exist regardless of mode. Null
 // when the sheet doesn't have enough typed to know them (e.g. a weekly-%
-// journey that never needed E_in).
+// journey that never needed TEI).
 function readMaintenanceCoefficients() {
   const heightCm = formulaNumber('formula-height');
-  const einKcal = formulaNumber('formula-ein');
+  const teiKcal = formulaNumber('formula-tei');
   const age = formulaNumber('formula-age');
   const sex = document.getElementById('formula-sex').value;
   const met = formulaNumber('formula-met');
@@ -1412,7 +1412,7 @@ function readMaintenanceCoefficients() {
   const kappa = formulaNumber('formula-met-o2');
   const tefPct = formulaNumber('formula-tef-pct');
   const formula = currentBmrFormula();
-  if (heightCm === null || einKcal === null || met === null || tau === null
+  if (heightCm === null || teiKcal === null || met === null || tau === null
     || kappa === null || tefPct === null) return null;
   if (formula !== 'katch' && age === null) return null;
 
@@ -1423,7 +1423,7 @@ function readMaintenanceCoefficients() {
 
   const sleepEffect = formulaNumber('formula-deprivation-effect');
   return {
-    einKcal,
+    teiKcal,
     tau,
     coefficients,
     sleepDeprivationKcal: sleepEffect !== null && sleepEffect > 0 ? sleepEffect : 0,
@@ -1440,7 +1440,7 @@ function maintenanceKcalAtMass(coefficients, mass) {
 // fields renderProteinFields/renderFiberFields/renderFatFields/
 // renderCarbFields already read, so re-derived here rather than duplicated
 // with different numbers. Ein isn't baked in here: it's passed into
-// macroBandsAtMass separately, since past arrival E_in itself jumps to the
+// macroBandsAtMass separately, since past arrival TEI itself jumps to the
 // new maintenance level, and fat/carb/fiber's floor need to follow it.
 function readMacroBandCoefficients() {
   const heightCm = formulaNumber('formula-height');
@@ -1470,21 +1470,21 @@ function readMacroBandCoefficients() {
   };
 }
 
-// The four macro bands at one day's mass and that day's own E_in — protein's
+// The four macro bands at one day's mass and that day's own TEI — protein's
 // both ends and fiber's ceiling move with mass (lean mass and body weight
-// respectively); fiber's floor, fat and carb move with E_in instead, which is
+// respectively); fiber's floor, fat and carb move with TEI instead, which is
 // constant pre-arrival and a step up to the maintenance level after it.
-function macroBandsAtMass(macro, mass, einKcal) {
+function macroBandsAtMass(macro, mass, teiKcal) {
   const lbmKg = boerLeanBodyMassKg(mass, macro.heightCm, macro.sex);
   return {
     protein: { minG: macro.proteinPerKgMin * lbmKg, maxG: macro.proteinPerKgMax * lbmKg },
-    fiber: { minG: macro.fiberPerKcalMin * (einKcal / 1000), maxG: macro.fiberPerKgMax * mass },
-    fat: { minG: ((macro.fatPctMin / 100) * einKcal) / KCAL_PER_G_FAT, maxG: ((macro.fatPctMax / 100) * einKcal) / KCAL_PER_G_FAT },
-    carb: { minG: ((macro.carbPctMin / 100) * einKcal) / KCAL_PER_G_CARB, maxG: ((macro.carbPctMax / 100) * einKcal) / KCAL_PER_G_CARB },
+    fiber: { minG: macro.fiberPerKcalMin * (teiKcal / 1000), maxG: macro.fiberPerKgMax * mass },
+    fat: { minG: ((macro.fatPctMin / 100) * teiKcal) / KCAL_PER_G_FAT, maxG: ((macro.fatPctMax / 100) * teiKcal) / KCAL_PER_G_FAT },
+    carb: { minG: ((macro.carbPctMin / 100) * teiKcal) / KCAL_PER_G_CARB, maxG: ((macro.carbPctMax / 100) * teiKcal) / KCAL_PER_G_CARB },
   };
 }
 
-// Fixed hues for the four macro bands — kept apart from E_in/BMR's
+// Fixed hues for the four macro bands — kept apart from TEI/BMR's
 // accent/ink-soft above them in the same subplot, and from the other three
 // subplots' own accent colors, since all four can be on screen together.
 const MACRO_BAND_COLORS = {
@@ -1526,7 +1526,7 @@ function readMassTrajectoryInputs() {
   }
 
   if (!curve || curve.coefficients.b === 0) return null;
-  const equilibriumKg = (curve.einKcal - curve.coefficients.a) / curve.coefficients.b;
+  const equilibriumKg = (curve.teiKcal - curve.coefficients.a) / curve.coefficients.b;
 
   return {
     m0, mg, heightCm, etaIso, tTotal, totalDays, mode: 'intake', equilibriumKg, b: curve.coefficients.b, curve,
@@ -1932,24 +1932,24 @@ function renderBalanceChart() {
   if (!inputs || !inputs.curve) { el.innerHTML = ''; return; }
 
   const { tTotal, totalDays, mg, curve } = inputs;
-  const { einKcal, coefficients, sleepDeprivationKcal } = curve;
+  const { teiKcal, coefficients, sleepDeprivationKcal } = curve;
   const divisor = coefficients.tefDivisor;
-  // Past arrival, E_in steps up to whatever holds mass at m_des exactly — the
+  // Past arrival, TEI steps up to whatever holds mass at m_des exactly — the
   // zero-deficit intake at the desire mass — rather than staying at the
   // deficit-bearing value that got the trajectory there.
-  const maintenanceEin = maintenanceKcalAtMass(coefficients, mg) / divisor;
+  const maintenanceTei = maintenanceKcalAtMass(coefficients, mg) / divisor;
 
   const steps = 40;
   const points = [];
   for (let i = 0; i <= steps; i += 1) {
     const t = (totalDays * i) / steps;
-    const einAtT = t > tTotal ? maintenanceEin : einKcal;
+    const teiAtT = t > tTotal ? maintenanceTei : teiKcal;
     const mass = massTrajectoryAtDay(inputs, t);
     const bmr = coefficients.aBmr + coefficients.bBmr * mass;
     const activityKcal = coefficients.activityPerKg * mass;
     const maintenance = bmr + activityKcal;
-    const tefAtT = einAtT * (1 - divisor);
-    const deficit = maintenance - einAtT * divisor;
+    const tefAtT = teiAtT * (1 - divisor);
+    const deficit = maintenance - teiAtT * divisor;
     points.push({
       // Signed by physical direction — leaves the body (BMR, activity,
       // maintenance, TEF, and net balance while in a real deficit) negative,
@@ -1958,7 +1958,7 @@ function renderBalanceChart() {
       bmrSigned: -bmr,
       activitySigned: -activityKcal,
       maintenanceSigned: -maintenance,
-      einAtT,
+      teiAtT,
       tefSigned: -tefAtT,
       deficit,
       deficitSigned: -deficit,
@@ -1968,7 +1968,7 @@ function renderBalanceChart() {
   const values = [
     ...points.map((p) => p.bmrSigned), ...points.map((p) => p.activitySigned),
     ...points.map((p) => p.maintenanceSigned), ...points.map((p) => p.tefSigned),
-    ...points.map((p) => p.deficitSigned), ...points.map((p) => p.einAtT), 0,
+    ...points.map((p) => p.deficitSigned), ...points.map((p) => p.teiAtT), 0,
     ...(sleepDeprivationKcal > 0 ? [sleepDeprivationKcal] : []),
   ];
   const valMin = Math.min(...values);
@@ -2006,7 +2006,7 @@ function renderBalanceChart() {
   }));
   svgParts.push(`<line x1="${xAt(tTotal).toFixed(1)}" y1="${SUBPLOT_MARGIN_TOP}" x2="${xAt(tTotal).toFixed(1)}" y2="${SUBPLOT_HEIGHT - SUBPLOT_MARGIN_BOTTOM}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2 2"></line>`);
 
-  if (balanceLayerVisible.intake) svgParts.push(`<path d="${lineD('einAtT')}" fill="none" stroke="var(--accent)" stroke-width="2"></path>`);
+  if (balanceLayerVisible.intake) svgParts.push(`<path d="${lineD('teiAtT')}" fill="none" stroke="var(--accent)" stroke-width="2"></path>`);
   if (balanceLayerVisible.tef) svgParts.push(`<path d="${lineD('tefSigned')}" fill="none" stroke="var(--amber)" stroke-width="2"></path>`);
   if (sleepDeprivationKcal > 0 && balanceLayerVisible.sleep) svgParts.push(`<line x1="${SUBPLOT_MARGIN_LEFT}" y1="${yAt(sleepDeprivationKcal).toFixed(1)}" x2="${xAt(tTotal).toFixed(1)}" y2="${yAt(sleepDeprivationKcal).toFixed(1)}" stroke="var(--teal)" stroke-width="2" stroke-dasharray="4 3"></line>`);
   if (balanceLayerVisible.bmr) svgParts.push(`<path d="${lineD('bmrSigned')}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="1 3" stroke-linecap="round"></path>`);
@@ -2021,10 +2021,10 @@ function renderBalanceChart() {
     { key: 'maintenance', color: 'var(--ink-soft)', label: 'M (maintenance at m̄ — REE + AEE)', dashed: true },
     { key: 'bmr', color: '#7c3aed', label: 'REE (resting energy expenditure, at m̄)', dashed: true },
     { key: 'activity', color: '#0891b2', label: 'AEE (daily desired activity energy expenditure)', dashed: true },
-    { key: 'intake', color: 'var(--accent)', label: 'E_in (desired daily intake)' },
+    { key: 'intake', color: 'var(--accent)', label: 'TEI (desired daily intake)' },
     { key: 'tef', color: 'var(--amber)', label: 'TEF (energy spent digesting that intake)' },
   ];
-  if (sleepDeprivationKcal > 0) legendItems.push({ key: 'sleep', color: 'var(--teal)', label: 'δ (Sleep Deprivation Effect)', dashed: true });
+  if (sleepDeprivationKcal > 0) legendItems.push({ key: 'sleep', color: 'var(--teal)', label: 'SD (Sleep Deprivation Effect)', dashed: true });
   svgParts.push(`<div class="mtc-legend">${legendItems.map((item) => `<button type="button" class="mtc-legend-item${balanceLayerVisible[item.key] ? '' : ' mtc-legend-item-off'}" data-layer="${item.key}">${legendLineMark(item.color, item.dashed)}${item.label}</button>`).join('')}</div>`);
 
   el.innerHTML = svgParts.join('');
@@ -2042,18 +2042,18 @@ function renderBalanceChart() {
       const bmr = coefficients.aBmr + coefficients.bBmr * mass;
       const activityKcal = coefficients.activityPerKg * mass;
       const maintenance = bmr + activityKcal;
-      const einAtT = t > tTotal ? maintenanceEin : einKcal;
-      const deficit = maintenance - einAtT * divisor;
+      const teiAtT = t > tTotal ? maintenanceTei : teiKcal;
+      const deficit = maintenance - teiAtT * divisor;
       const lines = [
         dayDateLabel(t),
         `D (daily energy deficit) ${Math.round(-deficit)} kcal/day`,
         `M (maintenance at m̄ — REE + AEE) ${Math.round(-maintenance)} kcal/day`,
         `REE (resting energy expenditure, at m̄) ${Math.round(-bmr)} kcal/day`,
         `AEE (daily desired activity energy expenditure) ${Math.round(-activityKcal)} kcal/day`,
-        `E_in (desired daily intake) ${Math.round(einAtT)} kcal/day`,
-        `TEF (energy spent digesting that intake) ${Math.round(-einAtT * (1 - divisor))} kcal/day`,
+        `TEI (desired daily intake) ${Math.round(teiAtT)} kcal/day`,
+        `TEF (energy spent digesting that intake) ${Math.round(-teiAtT * (1 - divisor))} kcal/day`,
       ];
-      if (sleepDeprivationKcal > 0 && t <= tTotal) lines.push(`δ (Sleep Deprivation Effect) +${Math.round(sleepDeprivationKcal)} kcal/day`);
+      if (sleepDeprivationKcal > 0 && t <= tTotal) lines.push(`SD (Sleep Deprivation Effect) +${Math.round(sleepDeprivationKcal)} kcal/day`);
       if (t > tTotal) lines.push('(maintenance tail, past arrival)');
       return { y: yAt(-deficit), text: lines.join('\n') };
     },
@@ -2062,11 +2062,11 @@ function renderBalanceChart() {
 
 // Which layer of the calories-intake subplot is toggled on.
 const intakeLayerVisible = {
-  ein: true, protein: true, fiber: true, fat: true, carb: true,
+  tei: true, protein: true, fiber: true, fat: true, carb: true,
 };
 
-// Subplot (c): E_in, the sheet's own desired-daily-intake field (left axis,
-// kcal/day) — reads exactly like formula-ein above, so day 0 here never
+// Subplot (c): TEI, the sheet's own desired-daily-intake field (left axis,
+// kcal/day) — reads exactly like formula-tei above, so day 0 here never
 // disagrees with the sheet. Layered underneath it, purely comparative (no
 // gram axis, since the stack sums four different substances a single scale
 // couldn't read accurately for any one of them), the four §1.5 dietary
@@ -2080,8 +2080,8 @@ function renderCaloriesIntakeChart() {
   if (!inputs || !inputs.curve) { el.innerHTML = ''; return; }
 
   const { tTotal, totalDays, mg, curve } = inputs;
-  const einKcal = curve.einKcal;
-  const maintenanceEin = maintenanceKcalAtMass(curve.coefficients, mg) / curve.coefficients.tefDivisor;
+  const teiKcal = curve.teiKcal;
+  const maintenanceTei = maintenanceKcalAtMass(curve.coefficients, mg) / curve.coefficients.tefDivisor;
   const macroCoeffs = readMacroBandCoefficients();
 
   const steps = 40;
@@ -2089,10 +2089,10 @@ function renderCaloriesIntakeChart() {
   for (let i = 0; i <= steps; i += 1) {
     const t = (totalDays * i) / steps;
     const mass = massTrajectoryAtDay(inputs, t);
-    const einAtT = t > tTotal ? maintenanceEin : einKcal;
-    const point = { t, einAtT };
+    const teiAtT = t > tTotal ? maintenanceTei : teiKcal;
+    const point = { t, teiAtT };
     if (macroCoeffs) {
-      const bands = macroBandsAtMass(macroCoeffs, mass, einAtT);
+      const bands = macroBandsAtMass(macroCoeffs, mass, teiAtT);
       let base = 0;
       point.layers = {};
       MACRO_BAND_ORDER.forEach((key) => {
@@ -2105,7 +2105,7 @@ function renderCaloriesIntakeChart() {
     points.push(point);
   }
 
-  const valMax = Math.max(...points.map((p) => p.einAtT));
+  const valMax = Math.max(...points.map((p) => p.teiAtT));
   const yMin = 0;
   const yMax = valMax * 1.15;
   const gramsMax = macroCoeffs ? Math.max(...points.map((p) => p.stackTop)) * 1.08 : 0;
@@ -2115,7 +2115,7 @@ function renderCaloriesIntakeChart() {
   const xAt = (t) => SUBPLOT_MARGIN_LEFT + (plotW * t) / totalDays;
   const yAt = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * (v - yMin)) / (yMax - yMin);
   const yAtGrams = (v) => SUBPLOT_MARGIN_TOP + plotH - (plotH * v) / gramsMax;
-  const einPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.einAtT).toFixed(1)}`).join(' ');
+  const teiPathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xAt(p.t).toFixed(1)},${yAt(p.teiAtT).toFixed(1)}`).join(' ');
   const macroBandPath = (key, lowField, highField) => {
     const top = points.map((p) => `${xAt(p.t).toFixed(1)},${yAtGrams(p.layers[key][highField]).toFixed(1)}`);
     const bottom = points.slice().reverse().map((p) => `${xAt(p.t).toFixed(1)},${yAtGrams(p.layers[key][lowField]).toFixed(1)}`);
@@ -2140,12 +2140,12 @@ function renderCaloriesIntakeChart() {
     });
   }
 
-  if (intakeLayerVisible.ein) svgParts.push(`<path d="${einPathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"></path>`);
+  if (intakeLayerVisible.tei) svgParts.push(`<path d="${teiPathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"></path>`);
 
   svgParts.push(subplotHoverSvgParts('var(--accent)'), '</svg>', '<div class="mtc-tooltip" hidden></div>');
 
   const legendItems = [
-    { key: 'ein', color: 'var(--accent)', label: 'E_in (desired daily intake)', line: true },
+    { key: 'tei', color: 'var(--accent)', label: 'TEI (desired daily intake)', line: true },
   ];
   if (macroCoeffs) MACRO_BAND_ORDER.forEach((key) => legendItems.push({ key, color: MACRO_BAND_COLORS[key], label: MACRO_BAND_LABELS[key] }));
   svgParts.push(`<div class="mtc-legend">${legendItems.map((item) => `<button type="button" class="mtc-legend-item${intakeLayerVisible[item.key] ? '' : ' mtc-legend-item-off'}" data-layer="${item.key}">${item.line ? legendLineMark(item.color, item.dashed) : `<span class="mtc-legend-swatch" style="background:${item.color}"></span>`}${item.label}</button>`).join('')}</div>`);
@@ -2162,20 +2162,20 @@ function renderCaloriesIntakeChart() {
     xAt, plotW, marginLeft: SUBPLOT_MARGIN_LEFT, tTotal: totalDays,
     sample: (t) => {
       const mass = massTrajectoryAtDay(inputs, t);
-      const einAtT = t > tTotal ? maintenanceEin : einKcal;
+      const teiAtT = t > tTotal ? maintenanceTei : teiKcal;
       const lines = [
         dayDateLabel(t),
-        `E_in (desired daily intake) ${Math.round(einAtT)} kcal/day`,
+        `TEI (desired daily intake) ${Math.round(teiAtT)} kcal/day`,
       ];
       if (macroCoeffs) {
-        const bands = macroBandsAtMass(macroCoeffs, mass, einAtT);
+        const bands = macroBandsAtMass(macroCoeffs, mass, teiAtT);
         MACRO_BAND_ORDER.forEach((key) => {
           if (!intakeLayerVisible[key]) return;
           lines.push(`${MACRO_BAND_LABELS[key]} ${Math.round(bands[key].minG)}–${Math.round(bands[key].maxG)} g/day`);
         });
       }
       if (t > tTotal) lines.push('(maintenance tail, past arrival)');
-      return { y: yAt(einAtT), text: lines.join('\n') };
+      return { y: yAt(teiAtT), text: lines.join('\n') };
     },
   });
 }
@@ -2270,12 +2270,12 @@ function renderActivityChart() {
 function renderFormulaPreviewCore() {
   syncTargetMassFromBmi();
   syncWeeklyLossFromPct();
-  const { mode, preview, bodyMassKg, heightCm, age, sex, formula, einKcal, days, invalid } = readFormulaInputs();
+  const { mode, preview, bodyMassKg, heightCm, age, sex, formula, teiKcal, days, invalid } = readFormulaInputs();
   const noteEl = document.getElementById('formula-profile-note');
 
   const computedNow = computedIdsForMode(mode);
   const showFailure = (message) => {
-    if (computedNow.includes('formula-ein')) setComputedField('formula-ein', '—');
+    if (computedNow.includes('formula-tei')) setComputedField('formula-tei', '—');
     if (computedNow.includes('formula-days')) {
       setComputedField('formula-days', '');
       setEtaDate('');
@@ -2302,7 +2302,7 @@ function renderFormulaPreviewCore() {
 
   noteEl.textContent = '';
 
-  if (mode === 'EIN' || mode === 'FIXED_PCT') {
+  if (mode === 'TEI' || mode === 'FIXED_PCT') {
     const tau = preview.ACTIVITY_TARGET_MIN;
     const targetKg = preview.BODY_MASS_TARGET_KG;
     const detail = withFormulaOverrides(preview, () => calorieTargetDetail(bodyMassKg, age));
@@ -2313,7 +2313,7 @@ function renderFormulaPreviewCore() {
     const proj = formulaProjection({
       intakeKcal: detail.kcal, bodyMassKg, targetKg, tau, ...profile,
     }, weeklyPct);
-    setComputedField('formula-ein', String(Math.round(detail.kcal)));
+    setComputedField('formula-tei', String(Math.round(detail.kcal)));
     renderFormulaDaysField(proj, { bodyMassKg, targetKg });
 
     // calorieTargetDetail already ran the sleep adjustment (see sleepAdjustedDeficitKcal
@@ -2329,8 +2329,8 @@ function renderFormulaPreviewCore() {
       ...renderWeeklyLossPctField(),
       ['D', formulaDeficitTraceLine(detail)],
       ...renderTefField(),
-      ...formulaEinRows(coefficients, {
-        bmr: detail.bmr, activityKcal: detail.activityKcal, deficit, einKcal: detail.kcal,
+      ...formulaTeiRows(coefficients, {
+        bmr: detail.bmr, activityKcal: detail.activityKcal, deficit, teiKcal: detail.kcal,
       }),
       ...renderTargetBmiField(),
     ];
@@ -2359,7 +2359,7 @@ function renderFormulaPreviewCore() {
     const knownField = dualKnownField.TAU;
 
     // Δm is the fixed known in BOTH directions of this mode — only τ (and, in the
-    // days-known direction, E_in) is being solved for — so the sleep adjustment applies the
+    // days-known direction, TEI) is being solved for — so the sleep adjustment applies the
     // same forward way calorieTargetDetail's own does, regardless of which box drove the
     // solve.
     const planSleepHours = preview.PLAN_SLEEP_HOURS;
@@ -2376,8 +2376,8 @@ function renderFormulaPreviewCore() {
     const divisor = shape.tefDivisor;
 
     let tau;
-    if (knownField === 'ein') {
-      const activityKcalNeeded = einKcal * divisor + deficit - bmr;
+    if (knownField === 'tei') {
+      const activityKcalNeeded = teiKcal * divisor + deficit - bmr;
       tau = Math.round((activityKcalNeeded * ML_O2_PER_KCAL) / (met * bodyMassKg * kappa));
     } else {
       const c = (met * kappa) / ML_O2_PER_KCAL;
@@ -2399,21 +2399,21 @@ function renderFormulaPreviewCore() {
       { ...preview, ACTIVITY_TARGET_MIN: tau },
       () => activityTargetKcal(bodyMassKg),
     );
-    const einForDisplay = knownField === 'ein' ? einKcal : (bmr + activityKcal - deficit) / divisor;
+    const teiForDisplay = knownField === 'tei' ? teiKcal : (bmr + activityKcal - deficit) / divisor;
 
     const weeklyPct = weeklyLossPctInPlay(deltaM, bodyMassKg);
-    const projArgs = { intakeKcal: einForDisplay, bodyMassKg, targetKg, tau, ...profile };
-    const proj = knownField === 'ein' ? formulaProjection(projArgs, weeklyPct) : projectTargetDays(projArgs);
-    if (knownField === 'ein') {
+    const projArgs = { intakeKcal: teiForDisplay, bodyMassKg, targetKg, tau, ...profile };
+    const proj = knownField === 'tei' ? formulaProjection(projArgs, weeklyPct) : projectTargetDays(projArgs);
+    if (knownField === 'tei') {
       renderFormulaDaysField(proj, { bodyMassKg, targetKg });
     } else {
-      setComputedField('formula-ein', String(Math.round(einForDisplay)));
+      setComputedField('formula-tei', String(Math.round(teiForDisplay)));
       setEtaDate(isoDateFromDays(days));
       setEtaNote('');
     }
 
     const bRounded = Math.round(b * 100) / 100;
-    const eqRounded = Math.round(((einForDisplay - a) / b) * 10) / 10;
+    const eqRounded = Math.round(((teiForDisplay - a) / b) * 10) / 10;
     const rows = [];
     if (knownField === 'days') {
       rows.push(['τ', `solved numerically so that m(t=${days}) = ${targetKg} kg`]);
@@ -2425,18 +2425,18 @@ function renderFormulaPreviewCore() {
       ...renderWeeklyLossPctField(),
       ['D', formulaDeficitTraceLine(sleepInfo)],
       ...renderTefField(),
-      ...formulaEinRows(coefficients, { bmr, activityKcal, deficit, einKcal: einForDisplay }),
+      ...formulaTeiRows(coefficients, { bmr, activityKcal, deficit, teiKcal: teiForDisplay }),
       ...renderTargetBmiField(),
     );
     if (proj.journey !== 'pct') {
       rows.push(
         ...formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }),
-        ['m∞', `(${Math.round(einForDisplay)} − ${Math.round(a)}) / ${bRounded}  =  ${eqRounded} kg`],
+        ['m∞', `(${Math.round(teiForDisplay)} − ${Math.round(a)}) / ${bRounded}  =  ${eqRounded} kg`],
       );
     }
     rows.push(...formulaDaysRow(proj, { bodyMassKg, targetKg, weeklyPct, bRounded, eqRounded }));
     renderFormulaSubstituted(rows, {
-      intakeKcal: einForDisplay,
+      intakeKcal: teiForDisplay,
       coefficients,
       bmr,
       activityKcal,
@@ -2451,7 +2451,7 @@ function renderFormulaPreviewCore() {
     const tau = preview.ACTIVITY_TARGET_MIN;
     const coefficients = maintenanceAffineCoefficients({ ...profile, tau });
     const { a, b } = coefficients;
-    const equilibriumKg = (einKcal - a) / b;
+    const equilibriumKg = (teiKcal - a) / b;
     const mG = equilibriumKg + (bodyMassKg - equilibriumKg) * Math.exp((-b * days) / GENERIC_KCAL_PER_KG_FAT);
     if (!Number.isFinite(mG)) { cantCompute(); return; }
     const mGRounded = Math.round(mG * 10) / 10;
@@ -2461,26 +2461,26 @@ function renderFormulaPreviewCore() {
 
     const bRounded = Math.round(b * 100) / 100;
     const eqRounded = Math.round(equilibriumKg * 10) / 10;
-    // No BMR/E_act/D/E_in preamble here: those describe maintenance at the CURRENT mass, which
-    // this mode never claims equals the typed E_in. D isn't being built from a target rate
-    // here — E_in is typed — so there's no forward "how much bigger does D need to be"
+    // No BMR/E_act/D/TEI preamble here: those describe maintenance at the CURRENT mass, which
+    // this mode never claims equals the typed TEI. D isn't being built from a target rate
+    // here — TEI is typed — so there's no forward "how much bigger does D need to be"
     // question for the sleep adjustment to answer; dashed rather than computed.
     renderSleepDeprivationField(null);
     renderFormulaSubstituted([
       ...renderTefField(),
       ...formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }),
-      ['m∞', `(${Math.round(einKcal)} − ${Math.round(a)}) / ${bRounded}  =  ${eqRounded} kg`],
+      ['m∞', `(${Math.round(teiKcal)} − ${Math.round(a)}) / ${bRounded}  =  ${eqRounded} kg`],
       ['m_des', `${eqRounded} + (${bodyMassKg} − ${eqRounded}) × e^(−${bRounded}×${days}/7700)  =  ${mGRounded} kg`],
       ...renderTargetBmiField(),
       ...renderWeeklyLossPctField(),
     ], (() => {
       const activityKcal = withFormulaOverrides(preview, () => activityTargetKcal(bodyMassKg));
       return {
-        intakeKcal: einKcal,
+        intakeKcal: teiKcal,
         coefficients,
         bmr,
         activityKcal,
-        deficit: bmr + activityKcal - einKcal * coefficients.tefDivisor,
+        deficit: bmr + activityKcal - teiKcal * coefficients.tefDivisor,
         days,
         journey: 'intake',
       };
@@ -2495,52 +2495,52 @@ function renderFormulaPreviewCore() {
   const { a, b } = coefficients;
   const activityKcal = withFormulaOverrides(preview, () => activityTargetKcal(bodyMassKg));
   const knownField = dualKnownField.DELTA_M;
-  // D is reverse-solved FROM E_in or m_des in this mode (below), never built from a target
+  // D is reverse-solved FROM TEI or m_des in this mode (below), never built from a target
   // rate — so, same as TARGET_MASS, there's no forward question for the sleep adjustment
   // to answer here; dashed rather than computed.
   renderSleepDeprivationField(null);
 
-  let einForDisplay;
+  let teiForDisplay;
   let decay;
-  if (knownField === 'ein') {
-    einForDisplay = einKcal;
+  if (knownField === 'tei') {
+    teiForDisplay = teiKcal;
   } else {
     decay = Math.exp((-b * days) / GENERIC_KCAL_PER_KG_FAT);
     const equilibriumKg = (targetKg - bodyMassKg * decay) / (1 - decay);
-    einForDisplay = a + b * equilibriumKg;
+    teiForDisplay = a + b * equilibriumKg;
   }
-  if (!Number.isFinite(einForDisplay)) { cantCompute(); return; }
+  if (!Number.isFinite(teiForDisplay)) { cantCompute(); return; }
 
-  const deficit = bmr + activityKcal - einForDisplay * coefficients.tefDivisor;
+  const deficit = bmr + activityKcal - teiForDisplay * coefficients.tefDivisor;
   const deltaMSolved = Math.round((deficit * 7 / GENERIC_KCAL_PER_KG_FAT) * 100) / 100;
   if (!Number.isFinite(deltaMSolved)) { cantCompute(); return; }
   setComputedField('formula-weekly-loss', String(deltaMSolved));
 
   const bRounded = Math.round(b * 100) / 100;
-  const eqRounded = Math.round(((einForDisplay - a) / b) * 10) / 10;
+  const eqRounded = Math.round(((teiForDisplay - a) / b) * 10) / 10;
 
-  if (knownField === 'ein') {
+  if (knownField === 'tei') {
     const weeklyPct = weeklyFatLossPct(deltaMSolved, bodyMassKg);
     const proj = formulaProjection({
-      intakeKcal: einForDisplay, bodyMassKg, targetKg, tau, ...profile,
+      intakeKcal: teiForDisplay, bodyMassKg, targetKg, tau, ...profile,
     }, weeklyPct);
     renderFormulaDaysField(proj, { bodyMassKg, targetKg });
 
     renderFormulaSubstituted([
       bmrRow,
       ['AEE', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
-      ...formulaDeficitRows(coefficients, { bmr, activityKcal, einKcal: einForDisplay, deficit }),
+      ...formulaDeficitRows(coefficients, { bmr, activityKcal, teiKcal: teiForDisplay, deficit }),
       ...renderTefField(),
       ['Δm', `${Math.round(deficit)} × 7 / 7700  =  ${deltaMSolved} kg/week`],
       ...(proj.journey === 'pct' ? [] : [
         ...formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }),
-        ['m∞', `(${Math.round(einForDisplay)} − ${Math.round(a)}) / ${bRounded}  =  ${eqRounded} kg`],
+        ['m∞', `(${Math.round(teiForDisplay)} − ${Math.round(a)}) / ${bRounded}  =  ${eqRounded} kg`],
       ]),
       ...formulaDaysRow(proj, { bodyMassKg, targetKg, weeklyPct, bRounded, eqRounded }),
       ...renderTargetBmiField(),
       ...renderWeeklyLossPctField(),
     ], {
-      intakeKcal: einForDisplay,
+      intakeKcal: teiForDisplay,
       coefficients,
       bmr,
       activityKcal,
@@ -2553,22 +2553,22 @@ function renderFormulaPreviewCore() {
 
   setEtaDate(isoDateFromDays(days));
   setEtaNote('');
-  setComputedField('formula-ein', String(Math.round(einForDisplay)));
+  setComputedField('formula-tei', String(Math.round(teiForDisplay)));
 
   const decayRounded = Math.round(decay * 1000) / 1000;
   renderFormulaSubstituted([
     ...formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }),
     ['m∞', `(${targetKg} − ${bodyMassKg}×${decayRounded}) / (1 − ${decayRounded})  =  ${eqRounded} kg`],
-    ['E_in', `${Math.round(a)} + ${bRounded} × ${eqRounded}  =  ${Math.round(einForDisplay)} kcal/day`],
+    ['TEI', `${Math.round(a)} + ${bRounded} × ${eqRounded}  =  ${Math.round(teiForDisplay)} kcal/day`],
     ...renderTefField(),
     bmrRow,
     ['AEE', `${met} × ${bodyMassKg} × ${tau} × ${kappa} / 200  =  ${Math.round(activityKcal)} kcal/day`],
-    ...formulaDeficitRows(coefficients, { bmr, activityKcal, einKcal: einForDisplay, deficit }),
+    ...formulaDeficitRows(coefficients, { bmr, activityKcal, teiKcal: teiForDisplay, deficit }),
     ['Δm', `${Math.round(deficit)} × 7 / 7700  =  ${deltaMSolved} kg/week`],
     ...renderTargetBmiField(),
     ...renderWeeklyLossPctField(),
   ], {
-    intakeKcal: einForDisplay,
+    intakeKcal: teiForDisplay,
     coefficients,
     bmr,
     activityKcal,
@@ -2596,14 +2596,14 @@ function loadDefaultInputs() {
 function initSheet() {
   buildTableOfContents();
 
-  document.querySelector('input[name="formula-solve-for"][value="EIN"]').checked = true;
-  dualKnownField.TAU = 'ein';
+  document.querySelector('input[name="formula-solve-for"][value="TEI"]').checked = true;
+  dualKnownField.TAU = 'tei';
   dualKnownField.DELTA_M = 'days';
   weeklyLossKnownField = 'kg';
   targetMassKnownField = 'bmi';
   document.querySelector('input[name="formula-bmr-formula"][value="mifflin"]').checked = true;
   loadDefaultInputs();
-  applySolveForMode('EIN');
+  applySolveForMode('TEI');
   renderFormulaPreview();
 }
 
@@ -2646,8 +2646,8 @@ function wireSheet() {
       applySolveForMode(mode);
     }
   };
-  document.getElementById('formula-ein').addEventListener('input', () => {
-    markDualKnown('ein');
+  document.getElementById('formula-tei').addEventListener('input', () => {
+    markDualKnown('tei');
     renderFormulaPreview();
   });
   document.getElementById('formula-days').addEventListener('input', () => {
@@ -2818,30 +2818,41 @@ function stripEquationMacros(text) {
     .replace(/\\ln/g, 'ln');
 }
 
-// A small LaTeX-to-HTML converter for "2 Human Metabolic System Model.tex",
-// scoped to exactly the constructs that file uses: \section/\subsection/
-// \subsubsection (id auto-derived via slugifyHeading, never typed), blank-
-// line-separated paragraphs, and \begin{equation}\label{x}...\end{equation}
-// blocks (consecutive ones grouped into one scrollable eqn-scroll, same as
-// the equation-run grouping the sheet already used under Markdown). Citation
-// numbers come from citationNumberByKey, built by the caller from the
-// separately-fetched references.bib — this function only resolves \eqref
-// against labels it finds in the same document.
-function renderReadmeLatex(texSource, citationNumberByKey) {
-  const lines = texSource.split('\n');
-
-  // Pass 1: number every equation by document order and record that number
-  // against its \label{eqn_x} — a permanent key, independent of position,
-  // that \eqref{eqn_x} in prose resolves against.
+// Numbers every equation across ALL fetched .tex fragments by combined
+// document order, and records that number against its \label{eqn_x} — a
+// permanent key, independent of which file or position it's in, that
+// \eqref{eqn_x} anywhere in the document (even a different fragment)
+// resolves against. Built once by the caller, before any fragment renders,
+// same reason citationNumberByKey is built once from the whole references.bib
+// rather than per-fragment.
+function buildEquationNumberByLabel(texSources) {
   const equationNumberByLabel = {};
   let equationTotal = 0;
-  lines.forEach((rawLine, i) => {
-    if (/^\s*\\begin\{equation\}/.test(rawLine)) {
-      equationTotal += 1;
-      const labelMatch = (lines[i + 1] || '').match(/^\s*\\label\{([\w-]+)\}/);
-      if (labelMatch) equationNumberByLabel[labelMatch[1]] = equationTotal;
-    }
+  texSources.forEach((texSource) => {
+    const lines = texSource.split('\n');
+    lines.forEach((rawLine, i) => {
+      if (/^\s*\\begin\{equation\}/.test(rawLine)) {
+        equationTotal += 1;
+        const labelMatch = (lines[i + 1] || '').match(/^\s*\\label\{([\w-]+)\}/);
+        if (labelMatch) equationNumberByLabel[labelMatch[1]] = equationTotal;
+      }
+    });
   });
+  return equationNumberByLabel;
+}
+
+// A small LaTeX-to-HTML converter for "4 Human Metabolic System Model.tex"
+// and the other content/*.tex fragments, scoped to exactly the constructs
+// they use: \section/\subsection/\subsubsection (id auto-derived via
+// slugifyHeading, never typed), blank-line-separated paragraphs, and
+// \begin{equation}\label{x}...\end{equation} blocks (consecutive ones
+// grouped into one scrollable eqn-scroll, same as the equation-run grouping
+// the sheet already used under Markdown). Citation numbers come from
+// citationNumberByKey, and equation numbers from equationNumberByLabel —
+// both built once by the caller across every fragment, so cross-fragment
+// \cite and \eqref resolve the same as within-fragment ones.
+function renderReadmeLatex(texSource, citationNumberByKey, equationNumberByLabel) {
+  const lines = texSource.split('\n');
 
   function resolveRefs(text) {
     return stripLatexEscapes(text)
@@ -2895,9 +2906,10 @@ function renderReadmeLatex(texSource, citationNumberByKey) {
           else if (t !== '') bodyLines.push(t);
           i += 1;
         }
-        const id = label || `eqn-${equationCount}`;
+        const num = (label && equationNumberByLabel[label]) || equationCount;
+        const id = label || `eqn-${num}`;
         const body = stripEquationMacros(stripLatexEscapes(bodyLines.join(' ')));
-        rows.push(`<div class="eqn-row" id="${id}"><span class="eqn-body">${renderEquationMath(body)}</span><a class="eqn-num" href="#${id}">(${equationCount})</a></div>`);
+        rows.push(`<div class="eqn-row" id="${id}"><span class="eqn-body">${renderEquationMath(body)}</span><a class="eqn-num" href="#${id}">(${num})</a></div>`);
         i += 1; // past this block's \end{equation}
         while (i < lines.length && lines[i].trim() === '') i += 1; // skip blanks before checking for the next \begin{equation}
       }
@@ -2961,9 +2973,10 @@ function renderReferencesSection(bibText) {
 // content/, numbered in page order: 0 the abstract, 1 the introduction, 2 the
 // literature review, 3 the system diagram (LaTeX fragment plus its own hand-
 // authored SVG, since renderReadmeLatex can't parse the raw TikZ figure it
-// wraps — see the FIGURE placeholder below), 4 the model text, 5 the case
-// study, 6 the conclusion (LaTeX fragments), 7 the glossary (LaTeX fragment),
-// 8 the bibliography (BibTeX), 9-11 the appendices (calculation UIs).
+// wraps — see the FIGURE placeholder below), 4 the model text, 5 the dietary
+// requirements, 6 the case study, 7 the conclusion (LaTeX fragments), 8 the
+// glossary (LaTeX fragment), 9 the bibliography (BibTeX), 10-12 the
+// appendices (calculation UIs).
 // README.md is never fetched here. All are spliced together in that order
 // before the init logic below runs.
 async function loadSheet() {
@@ -2975,6 +2988,7 @@ async function loadSheet() {
     diagramTexSource,
     systemDiagramHtml,
     texSource,
+    dietaryRequirementsSource,
     caseStudySource,
     conclusionSource,
     glossarySource,
@@ -2989,35 +3003,45 @@ async function loadSheet() {
     fetch('content/3 System Diagram.tex', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/3 System Diagram.html', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/4 Human Metabolic System Model.tex', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/5 Case Study.tex', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/6 Conclusion.tex', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/7 Glossary.tex', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/8 References.bib', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/9 Appendix Interactive Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/10 Appendix Activity Energy Expenditure Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
-    fetch('content/11 Appendix Intake Calorie Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/5 Dietary Requirements.tex', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/6 Case Study.tex', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/7 Conclusion.tex', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/8 Glossary.tex', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/9 References.bib', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/10 Appendix Interactive Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/11 Appendix Activity Energy Expenditure Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/12 Appendix Intake Calorie Calculation Sheet.html', { cache: 'no-store' }).then((response) => response.text()),
   ]);
 
   const citationNumberByKey = {};
   parseBibtex(bibText).forEach((entry, index) => { citationNumberByKey[entry.key] = index + 1; });
 
-  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(abstractSource, citationNumberByKey));
-  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(introSource, citationNumberByKey));
-  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(literatureReviewSource, citationNumberByKey));
+  // Built once, across every fragment in the order they're rendered, so an
+  // \eqref in one fragment (e.g. Dietary Requirements) resolves against a
+  // \label defined in another (e.g. the Model text) with the same number
+  // the reader sees printed on that equation's own box.
+  const equationNumberByLabel = buildEquationNumberByLabel([
+    diagramTexSource, texSource, dietaryRequirementsSource, caseStudySource, conclusionSource,
+  ]);
+
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(abstractSource, citationNumberByKey, equationNumberByLabel));
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(introSource, citationNumberByKey, equationNumberByLabel));
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(literatureReviewSource, citationNumberByKey, equationNumberByLabel));
 
   // The FIGURE placeholder sits exactly where \begin{figure} appears in the
   // .tex source, so the SVG lands in the right spot regardless of how the
   // surrounding headings/subsections are arranged.
-  const diagramHtml = renderReadmeLatex(diagramTexSource, citationNumberByKey).replace('<!--FIGURE-->', systemDiagramHtml);
+  const diagramHtml = renderReadmeLatex(diagramTexSource, citationNumberByKey, equationNumberByLabel).replace('<!--FIGURE-->', systemDiagramHtml);
   sheetRoot.insertAdjacentHTML('beforeend', diagramHtml);
 
-  const modelHtml = renderReadmeLatex(texSource, citationNumberByKey);
+  const modelHtml = renderReadmeLatex(texSource, citationNumberByKey, equationNumberByLabel);
   const modelNodes = [...new DOMParser().parseFromString(modelHtml, 'text/html').body.childNodes];
   modelNodes.forEach((node) => sheetRoot.appendChild(document.importNode(node, true)));
 
-  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(caseStudySource, citationNumberByKey));
-  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(conclusionSource, citationNumberByKey));
-  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(glossarySource, citationNumberByKey));
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(dietaryRequirementsSource, citationNumberByKey, equationNumberByLabel));
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(caseStudySource, citationNumberByKey, equationNumberByLabel));
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(conclusionSource, citationNumberByKey, equationNumberByLabel));
+  sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(glossarySource, citationNumberByKey, equationNumberByLabel));
   sheetRoot.insertAdjacentHTML('beforeend', renderReferencesSection(bibText).html);
   sheetRoot.insertAdjacentHTML('beforeend', sheetHtml);
   sheetRoot.insertAdjacentHTML('beforeend', activityBurnSheetHtml);
@@ -3026,7 +3050,7 @@ async function loadSheet() {
 
 // ---------------------------------------------------------------------------
 // Appendix: Activity Energy Expenditure Calculation Sheet. Each row's Calories is
-// the same E_act = MET × m̄ × τ × κ / ε identity Appendix 9 uses for its
+// the same E_act = MET × m̄ × τ × κ / ε identity Appendix 10 uses for its
 // desired-activity target (κ from formula-met-o2, ε the fixed
 // ML_O2_PER_KCAL) — only τ, the active duration, is new here, read off each
 // row's own Amount rather than typed once. Duration-per-unit mirrors the
@@ -3202,7 +3226,7 @@ function initActivityBurnSheet() {
     input.addEventListener('input', renderActivityBurnTable);
   });
   // Recompute every row's Calories when the body mass or oxygen-uptake
-  // inputs it depends on change up in Appendix 9, same as that sheet's own
+  // inputs it depends on change up in Appendix 10, same as that sheet's own
   // fields do for each other.
   ['formula-body-mass-smooth', 'formula-met-o2'].forEach((id) => {
     document.getElementById(id).addEventListener('input', renderActivityBurnTable);

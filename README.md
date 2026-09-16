@@ -12,15 +12,17 @@ This model is provided for educational and informational purposes only and is no
 - `content/0 Abstract.tex` — the abstract.
 - `content/1 Introduction.tex` — the introduction.
 - `content/2 Literature Review.tex` — the literature review.
-- `content/3 Human Metabolic System Diagram.html` — the system block diagram, as SVG for the site.
-- `content/3 Human Metabolic System Diagram.tex` — the system block diagram.
+- `content/3 System Diagram.html` — the system block diagram, as SVG for the site.
+- `content/3 System Diagram.tex` — the system block diagram.
 - `content/4 Human Metabolic System Model.tex` — the model's equations.
-- `content/5 Case Study.tex` — the case study.
-- `content/6 Glossary.tex` — acronyms, symbols and variables, subscripts and indices.
-- `content/7 References.bib` — the model's bibliography.
-- `content/8 Appendix Interactive Calculation Sheet.html` — the interactive calculator UI.
-- `content/9 Appendix Activity Energy Expenditure Calculation Sheet.html` — the activity energy expenditure calculation sheet.
-- `content/10 Appendix Intake Calorie Calculation Sheet.html` — the intake calorie calculation sheet.
+- `content/5 Dietary Requirements.tex` — protein, dietary fiber, fat, and carbohydrate targets, plus deficit rate/magnitude safety limits.
+- `content/6 Case Study.tex` — the case study.
+- `content/7 Conclusion.tex` — the conclusion.
+- `content/8 Glossary.tex` — acronyms, symbols and variables, subscripts and indices.
+- `content/9 References.bib` — the model's bibliography.
+- `content/10 Appendix Interactive Calculation Sheet.html` — the interactive calculator UI.
+- `content/11 Appendix Activity Energy Expenditure Calculation Sheet.html` — the activity energy expenditure calculation sheet.
+- `content/12 Appendix Intake Calorie Calculation Sheet.html` — the intake calorie calculation sheet.
 - `assets/script.js` — page logic.
 - `assets/style.css` — page styling.
 - `assets/qr-metabolic-model.svg` — QR code linking to the live site.
