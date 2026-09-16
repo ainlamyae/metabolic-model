@@ -1,0 +1,70 @@
+% A content fragment, meant to be \input{} or \include{}d from a master
+% document that supplies \documentclass, packages (amsmath, unicode-math +
+% fontspec for the raw Unicode math symbols below — compile the master with
+% xelatex or lualatex), \begin{document}/\end{document}, and its own
+% \bibliographystyle/\bibliography pointing at "9 References.bib".
+
+\section{Dietary Requirements}
+
+The remaining four bands — protein, dietary fiber, fat, and carbohydrate — set healthy daily ranges for diet composition rather than for the size of the energy deficit itself, each scaled to lean mass or to intake, in the four subsections below. A final subsection then bounds the deficit itself, both in rate and in magnitude relative to BMR.
+
+\subsection{Protein Requirements}
+
+Protein needs for energy-restricted, resistance-trained individuals with low body fat are estimated at a floor p\_min and ceiling p\_max of 2.3–3.1 g per kg of fat-free (lean) mass per day, scaled upward with the severity of caloric restriction and leanness \cite{ref_helms2014}. The corresponding lower and upper healthy daily protein amounts, P\_min and P\_max, are given in eqn.~\eqref{eqn_pmin} and eqn.~\eqref{eqn_pmax}.
+
+\begin{equation}
+\label{eqn_pmin}
+P_{min} = p_{min} × LBM
+\end{equation}
+\begin{equation}
+\label{eqn_pmax}
+P_{max} = p_{max} × LBM
+\end{equation}
+
+\subsection{Dietary Fiber Requirements}
+
+Dietary fiber intake is recommended relative to energy intake via a floor coefficient b\_min of roughly 14 g per 1,000 kcal consumed, while a practical upper ceiling b\_max is instead scaled to body weight, per the USDA Dietary Guidelines for Americans \cite{ref_usda2020}. These two different bases give the lower and upper healthy daily dietary fiber amounts, F\_min and F\_max, in eqn.~\eqref{eqn_fmin} and eqn.~\eqref{eqn_fmax} respectively.
+
+\begin{equation}
+\label{eqn_fmin}
+F_{min} = b_{min} × \frac{TEI}{1000}
+\end{equation}
+\begin{equation}
+\label{eqn_fmax}
+F_{max} = b_{max} × m̄
+\end{equation}
+
+\subsection{Fat Requirements}
+
+Fat intake is recommended within an Acceptable Macronutrient Distribution Range (AMDR) of 20–35\% of total energy intake for adults \cite{ref_iom2005}, the floor and ceiling percentages denoted k\_min and k\_max. Converted to grams at fat's fixed energy density of 9 kcal/g, this range gives the lower and upper healthy daily fat amounts, G\_min and G\_max, in eqn.~\eqref{eqn_gmin} and eqn.~\eqref{eqn_gmax}.
+
+\begin{equation}
+\label{eqn_gmin}
+G_{min} = \frac{(k_{min}/100) × TEI}{9}
+\end{equation}
+\begin{equation}
+\label{eqn_gmax}
+G_{max} = \frac{(k_{max}/100) × TEI}{9}
+\end{equation}
+
+\subsection{Carbohydrate Requirements}
+
+Carbohydrate intake carries the same AMDR structure, recommended at 45–65\% of total energy intake for adults \cite{ref_iom2005}, the floor and ceiling percentages denoted q\_min and q\_max. Converted to grams at carbohydrate's fixed energy density of 4 kcal/g, this range gives the lower and upper healthy daily carbohydrate amounts, C\_min and C\_max, in eqn.~\eqref{eqn_cmin} and eqn.~\eqref{eqn_cmax}.
+
+\begin{equation}
+\label{eqn_cmin}
+C_{min} = \frac{(q_{min}/100) × TEI}{4}
+\end{equation}
+\begin{equation}
+\label{eqn_cmax}
+C_{max} = \frac{(q_{max}/100) × TEI}{4}
+\end{equation}
+
+\subsection{Deficit Safety Limits}
+
+Beyond composition, the pace and depth of the deficit itself carry risk: too fast a rate of fat loss, or too deep a cut relative to BMR, accelerates lean-mass loss and metabolic adaptation. The weekly rate Δm\% (eqn.~\eqref{eqn_dmpc}) should stay within 0.5–1\%, the range shown to preserve fat-free mass and strength/power performance in trained individuals under caloric restriction \cite{ref_garthe2011}. The daily deficit expressed as a share of BMR, D\_bmr\%, given in eqn.~\eqref{eqn_dbmr}, should stay under 20\%, in line with the moderate, non-aggressive deficits recommended to protect fat-free mass and resting energy expenditure during contest-style caloric restriction \cite{ref_helms2014prep}.
+
+\begin{equation}
+\label{eqn_dbmr}
+D_{bmr}\% = 100 × \frac{BMR - TEI}{BMR}
+\end{equation}
