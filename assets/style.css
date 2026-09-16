@@ -943,7 +943,7 @@ ul.limits li b {
 /* The one row whose input is the current answer rather than a knob to turn:
    readonly like ρ/ε, but still accent-coloured so it keeps reading as "the
    answer" among its siblings. .formula-field-computed gets the same look for
-   E_in/t/date in TAU and DELTA_M — there the "answer" field stays genuinely
+   TEI/t/date in TAU and DELTA_M — there the "answer" field stays genuinely
    editable, so it can't rely on :read-only alone. */
 .formula-row input:read-only,
 .formula-row input.formula-field-computed {
