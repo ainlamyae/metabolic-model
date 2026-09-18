@@ -3211,6 +3211,21 @@ function renderActivityBurnTable() {
   if (timeTotal) timeTotal.textContent = `${Math.round(selectedMinutes)} min`;
   const kcalTotal = table.querySelector('.activity-burn-kcal-total');
   if (kcalTotal) kcalTotal.textContent = `${Math.round(selectedKcal).toLocaleString()} kcal`;
+
+  // Desire row: the desired activity target computed up in Appendix 10 — τ
+  // (formula-activity-min) and the AEE it produces (formula-activity-kcal,
+  // "daily desired activity energy expenditure"). Both are read straight off
+  // those readonly boxes so this row tracks whatever the sheet last solved.
+  const timeDesire = table.querySelector('.activity-burn-time-desire');
+  if (timeDesire) {
+    const tau = formulaNumber('formula-activity-min');
+    timeDesire.textContent = tau === null ? '—' : `${Math.round(tau)} min`;
+  }
+  const kcalDesire = table.querySelector('.activity-burn-kcal-desire');
+  if (kcalDesire) {
+    const aee = formulaNumber('formula-activity-kcal');
+    kcalDesire.textContent = aee === null ? '—' : `${Math.round(aee).toLocaleString()} kcal`;
+  }
 }
 
 function initActivityBurnSheet() {
@@ -3242,10 +3257,296 @@ function initActivityBurnSheet() {
   applyActivityBurnSort();
 }
 
+// ---------------------------------------------------------------------------
+// Appendix: Intake Calorie Calculation Sheet. Mirrors the Activity sheet above:
+// each row carries its Calories/Protein/Dietary-Fiber/Fat/Carb for data-per
+// grams, the Amount box scales all of them linearly, and TEF is estimated from
+// the scaled macros at the Atwater/TEF-share rates the ledger app uses (Protein
+// 25%, Carbohydrate 7.5%, Fat 2%). The Desired row reads Appendix 10's already-
+// computed targets directly — TEI for calories, the P/F/G/C bands for the
+// macros, and f×TEI for TEF — so it tracks whatever that sheet last solved.
+const INTAKE_TEF_PROTEIN_SHARE = 0.25;
+const INTAKE_TEF_CARB_SHARE = 0.075;
+const INTAKE_TEF_FAT_SHARE = 0.02;
+
+function intakeAmountGrams(row) {
+  const input = row.querySelector('.intake-amount');
+  if (!input) return 0;
+  const n = Number(String(input.value).trim());
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+// A row's figures scaled to the typed Amount: base × grams / data-per. TEF is
+// derived from the scaled macros rather than stored, the same estimate the
+// ledger's Nutrition table falls back to when no TEF is typed.
+function intakeRowNutrients(row) {
+  const per = Number(row.dataset.per) || 100;
+  const factor = intakeAmountGrams(row) / per;
+  const cal = (Number(row.dataset.cal) || 0) * factor;
+  const protein = (Number(row.dataset.protein) || 0) * factor;
+  const fiber = (Number(row.dataset.fiber) || 0) * factor;
+  const fat = (Number(row.dataset.fat) || 0) * factor;
+  const carb = (Number(row.dataset.carb) || 0) * factor;
+  const tef = protein * 4 * INTAKE_TEF_PROTEIN_SHARE
+    + carb * 4 * INTAKE_TEF_CARB_SHARE
+    + fat * 9 * INTAKE_TEF_FAT_SHARE;
+  return { factor, cal, protein, fiber, fat, carb, tef };
+}
+
+function formatIntakeGrams(g) {
+  return `${Math.round(g * 10) / 10}`;
+}
+
+function setIntakeCell(root, selector, text) {
+  const el = root.querySelector(selector);
+  if (el) el.textContent = text;
+}
+
+// Same click-to-sort convention as the Activity sheet — reimplemented locally
+// since these rows are static markup, not data re-rendered from an array.
+const intakeSortState = { key: null, dir: 1 };
+
+function intakeSortValue(row, key) {
+  if (key === 'classification') return row.querySelector('.intake-classification').textContent.trim().toLowerCase();
+  if (key === 'name') return row.querySelector('.intake-name').textContent.trim().toLowerCase();
+  if (key === 'amount') return intakeAmountGrams(row);
+  const n = intakeRowNutrients(row);
+  if (key in n) return n[key === 'calories' ? 'cal' : key];
+  return '';
+}
+
+function applyIntakeSort() {
+  const table = document.getElementById('intake-table');
+  if (!table || !intakeSortState.key) return;
+  const tbody = table.tBodies[0];
+  const rows = [...tbody.querySelectorAll('tr')];
+  const key = intakeSortState.key;
+
+  rows.sort((a, b) => {
+    const va = intakeSortValue(a, key);
+    const vb = intakeSortValue(b, key);
+    return typeof va === 'number' && typeof vb === 'number'
+      ? (va - vb) * intakeSortState.dir
+      : String(va).localeCompare(String(vb)) * intakeSortState.dir;
+  });
+
+  rows.forEach((row) => tbody.appendChild(row));
+
+  table.querySelectorAll('th.sortable').forEach((th) => {
+    const indicator = th.querySelector('.sort-indicator');
+    if (!indicator) return;
+    indicator.textContent = th.dataset.sort === key ? (intakeSortState.dir === 1 ? ' ▲' : ' ▼') : '';
+  });
+}
+
+function sortIntakeTable(key) {
+  if (intakeSortState.key === key) {
+    intakeSortState.dir *= -1;
+  } else {
+    intakeSortState.key = key;
+    intakeSortState.dir = 1;
+  }
+  applyIntakeSort();
+}
+
+function initIntakeSortableHeaders() {
+  const table = document.getElementById('intake-table');
+  if (!table) return;
+
+  table.querySelectorAll('th.sortable').forEach((th) => {
+    const label = document.createElement('span');
+    label.textContent = th.textContent;
+    const indicator = document.createElement('span');
+    indicator.className = 'sort-indicator';
+    th.textContent = '';
+    th.append(label, indicator);
+    th.setAttribute('tabindex', '0');
+
+    th.addEventListener('click', () => sortIntakeTable(th.dataset.sort));
+    th.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        th.click();
+      }
+    });
+  });
+}
+
+// One macro band end (P_min, P_max, …) from Appendix 10's readonly box, as
+// "123 g", or "—" while it's blank.
+function intakeDesireGrams(id) {
+  const value = formulaNumber(id);
+  return value === null ? '—' : `${Math.round(value)}`;
+}
+
+// The Desire Min / Desire Max rows read Appendix 10's targets directly. The
+// macros split across the two rows (their floor on Min, ceiling on Max); the
+// single-valued targets — TEI for calories, f×TEI for TEF — have no band, so
+// the same figure sits on both rows to keep each row a complete profile.
+function renderIntakeDesire(table) {
+  const tei = formulaNumber('formula-tei');
+  const teiText = tei === null ? '—' : Math.round(tei).toLocaleString();
+  setIntakeCell(table, '.intake-cal-desire', teiText);
+  setIntakeCell(table, '.intake-cal-desire-max', teiText);
+
+  setIntakeCell(table, '.intake-protein-desire-min', intakeDesireGrams('formula-protein-min'));
+  setIntakeCell(table, '.intake-protein-desire-max', intakeDesireGrams('formula-protein-max'));
+  setIntakeCell(table, '.intake-fiber-desire-min', intakeDesireGrams('formula-fiber-min'));
+  setIntakeCell(table, '.intake-fiber-desire-max', intakeDesireGrams('formula-fiber-max'));
+  setIntakeCell(table, '.intake-fat-desire-min', intakeDesireGrams('formula-fat-min'));
+  setIntakeCell(table, '.intake-fat-desire-max', intakeDesireGrams('formula-fat-max'));
+  setIntakeCell(table, '.intake-carb-desire-min', intakeDesireGrams('formula-carb-min'));
+  setIntakeCell(table, '.intake-carb-desire-max', intakeDesireGrams('formula-carb-max'));
+
+  const tef = formulaNumber('formula-tef');
+  const tefText = tef === null ? '—' : Math.round(tef).toLocaleString();
+  setIntakeCell(table, '.intake-tef-desire', tefText);
+  setIntakeCell(table, '.intake-tef-desire-max', tefText);
+}
+
+function renderIntakeTable() {
+  const table = document.getElementById('intake-table');
+  if (!table) return;
+
+  let totalCal = 0, totalProtein = 0, totalFiber = 0, totalFat = 0, totalCarb = 0, totalTef = 0;
+
+  table.querySelectorAll('tbody tr').forEach((row) => {
+    const n = intakeRowNutrients(row);
+    setIntakeCell(row, '.intake-cal', Math.round(n.cal).toLocaleString());
+    setIntakeCell(row, '.intake-protein', formatIntakeGrams(n.protein));
+    setIntakeCell(row, '.intake-fiber', formatIntakeGrams(n.fiber));
+    setIntakeCell(row, '.intake-fat', formatIntakeGrams(n.fat));
+    setIntakeCell(row, '.intake-carb', formatIntakeGrams(n.carb));
+    setIntakeCell(row, '.intake-tef', Math.round(n.tef).toLocaleString());
+
+    const box = row.querySelector('.intake-check');
+    if (box && box.checked) {
+      totalCal += n.cal; totalProtein += n.protein; totalFiber += n.fiber;
+      totalFat += n.fat; totalCarb += n.carb; totalTef += n.tef;
+    }
+  });
+
+  setIntakeCell(table, '.intake-cal-total', Math.round(totalCal).toLocaleString());
+  setIntakeCell(table, '.intake-protein-total', formatIntakeGrams(totalProtein));
+  setIntakeCell(table, '.intake-fiber-total', formatIntakeGrams(totalFiber));
+  setIntakeCell(table, '.intake-fat-total', formatIntakeGrams(totalFat));
+  setIntakeCell(table, '.intake-carb-total', formatIntakeGrams(totalCarb));
+  setIntakeCell(table, '.intake-tef-total', Math.round(totalTef).toLocaleString());
+
+  renderIntakeDesire(table);
+}
+
+// The 🧬 popup: that food's stored micronutrient panel (data-micros, a JSON map
+// of name -> { amount, unit } for data-per grams) scaled to the typed Amount.
+function openIntakeMicros(row) {
+  const modal = document.getElementById('intake-micros-modal');
+  if (!modal || !row) return;
+
+  const name = row.querySelector('.intake-name').textContent.trim();
+  const grams = intakeAmountGrams(row);
+  const factor = grams / (Number(row.dataset.per) || 100);
+  let micros = {};
+  try { micros = JSON.parse(row.dataset.micros || '{}'); } catch (error) { micros = {}; }
+
+  modal.querySelector('.intake-modal-title').textContent = name;
+  modal.querySelector('.intake-modal-sub').textContent = `Micronutrients for ${Math.round(grams * 10) / 10} g`;
+
+  const body = modal.querySelector('.intake-modal-body');
+  body.textContent = '';
+  const entries = Object.entries(micros);
+  if (!entries.length) {
+    const empty = document.createElement('p');
+    empty.className = 'intake-modal-empty';
+    empty.textContent = 'No micronutrient data for this food.';
+    body.append(empty);
+  } else {
+    const table = document.createElement('table');
+    table.className = 'intake-modal-table';
+    const tbody = document.createElement('tbody');
+    entries.forEach(([nutrient, value]) => {
+      const amount = (Number(value && value.amount) || 0) * factor;
+      const unit = (value && value.unit) || '';
+      const tr = document.createElement('tr');
+      const nameTd = document.createElement('td');
+      nameTd.textContent = nutrient;
+      const valTd = document.createElement('td');
+      valTd.textContent = `${Math.round(amount * 100) / 100} ${unit}`.trim();
+      tr.append(nameTd, valTd);
+      tbody.append(tr);
+    });
+    table.append(tbody);
+    body.append(table);
+  }
+
+  modal.hidden = false;
+}
+
+function closeIntakeMicros() {
+  const modal = document.getElementById('intake-micros-modal');
+  if (modal) modal.hidden = true;
+}
+
+function initIntakeSheet() {
+  const table = document.getElementById('intake-table');
+  if (!table) return;
+
+  table.querySelectorAll('.intake-check').forEach((box) => {
+    box.addEventListener('change', renderIntakeTable);
+  });
+  table.querySelectorAll('.intake-amount').forEach((input) => {
+    input.addEventListener('input', renderIntakeTable);
+  });
+  table.querySelectorAll('.intake-micros-btn').forEach((btn) => {
+    btn.addEventListener('click', () => openIntakeMicros(btn.closest('tr')));
+  });
+
+  const modal = document.getElementById('intake-micros-modal');
+  if (modal) {
+    modal.querySelectorAll('[data-intake-modal-close]').forEach((el) => {
+      el.addEventListener('click', closeIntakeMicros);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !modal.hidden) closeIntakeMicros();
+    });
+  }
+
+  initIntakeSortableHeaders();
+  renderIntakeTable();
+
+  // Default view: most Protein first.
+  intakeSortState.key = 'protein';
+  intakeSortState.dir = -1;
+  applyIntakeSort();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSheet();
   wireSheet();
   initSheet();
   initActivityBurnSheet();
+  initIntakeSheet();
+
+  // Both appendices' Desired rows mirror Appendix 10's readonly outputs, which
+  // it recomputes on its own field edits without firing 'input' on those
+  // readonly boxes — so listen once at the shared #sheet-root and refresh both
+  // tables after any edit in the sheet has bubbled up (by which point Appendix
+  // 10's own handlers have already updated those boxes).
+  const sheetRoot = document.getElementById('sheet-root');
+  if (sheetRoot) {
+    const refreshDesired = () => { renderActivityBurnTable(); renderIntakeTable(); };
+    sheetRoot.addEventListener('input', refreshDesired);
+    sheetRoot.addEventListener('change', refreshDesired);
+  }
+
   document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+  // Every section is injected by loadSheet() above, which finishes long after
+  // the browser has already tried (and failed) to resolve any #hash in the URL
+  // — so on a reload with a hash the page just sits at the top. Now that the
+  // target exists, jump to it ourselves. decodeURIComponent handles ids that
+  // arrive percent-encoded in the address bar.
+  if (location.hash.length > 1) {
+    const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (target) target.scrollIntoView();
+  }
 });
