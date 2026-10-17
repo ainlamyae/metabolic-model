@@ -11,24 +11,44 @@
     </label>
 </fieldset>
 
+<!-- Which LBM Katch-McArdle, protein and glycogen read. -->
+<fieldset class="formula-solve-for formula-lbm-formula">
+    <legend>Lean body mass — feeds Katch-McArdle, the protein band and glycogen</legend>
+    <label title="Boer (1984): LBM from body mass, height and sex. Needs no tape measurements.">
+        <input type="radio" name="formula-lbm-formula" value="boer" checked>
+        Boer (m, h, σ)
+    </label>
+    <label title="U.S. Navy (Hodgdon & Beckett): LBM = m̄ × (1 − BF%/100), with BF% from neck, waist, height and, for women, hip. Uses Boer until those are filled in.">
+        <input type="radio" name="formula-lbm-formula" value="navy">
+        U.S. Navy (C_neck, C_waist, C_hip, h, σ)
+    </label>
+</fieldset>
+
 <fieldset class="formula-solve-for formula-bmr-formula">
-    <legend>Basal metabolic rate</legend>
+    <legend>Basal metabolic rate — drives every deficit and desired calorie figure</legend>
     <label title="Mifflin-St Jeor (1990): BMR from body mass, height, age and sex. The original equation, and the one that needs no lean-mass estimate.">
         <input type="radio" name="formula-bmr-formula" value="mifflin" checked>
         Mifflin-St Jeor (m, h, a, σ)
     </label>
-    <label title="Katch-McArdle (1996): BMR = 370 + 21.6 × LBM. Fat mass is nearly inert metabolically, so this predicts from lean mass alone — more accurate the better your LBM figure is, and here LBM is the Boer estimate below. Age drops out entirely; sex enters only through LBM.">
+    <label title="Katch-McArdle (1996): BMR = 370 + 21.6 × LBM. Fat mass is nearly inert metabolically, so this predicts from lean mass alone — more accurate the better your LBM figure is, and here LBM is whichever the Lean body mass question above picks. Age drops out entirely; sex enters only through LBM.">
         <input type="radio" name="formula-bmr-formula" value="katch">
         Katch-McArdle (LBM)
+    </label>
+    <label title="BMR_avg: the mean of BMR_mif and BMR_kat. Both are affine in body mass, so their mean is too, and every deficit and desired calorie figure runs on it.">
+        <input type="radio" name="formula-bmr-formula" value="bmr_avg">
+        BMR_avg (average)
     </label>
 </fieldset>
 
 <div class="formula-inputs">
-    <label class="formula-row" title="The mean of every weigh-in in the 7 days ending at your latest one — m̄(t) = (1/7) × Σ m(t−i). Water and glycogen move the scale by more than a week of fat loss does, and the decay model assumes clean mass, so every formula here reads this rather than a single day's reading.">
-        <span class="formula-sym">m̄</span>
-        <span class="formula-name">7-day rolling average body mass</span>
-        <input type="text" id="formula-body-mass-smooth" inputmode="decimal">
-        <span class="formula-unit">kg</span>
+    <label class="formula-row">
+        <span class="formula-sym">σ</span>
+        <span class="formula-name">sex</span>
+        <select id="formula-sex">
+            <option value="male">male</option>
+            <option value="female">female</option>
+        </select>
+        <span class="formula-unit"></span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">h</span>
@@ -42,14 +62,30 @@
         <input type="text" id="formula-age" inputmode="decimal">
         <span class="formula-unit">years</span>
     </label>
-    <label class="formula-row">
-        <span class="formula-sym">σ</span>
-        <span class="formula-name">sex</span>
-        <select id="formula-sex">
-            <option value="male">male</option>
-            <option value="female">female</option>
-        </select>
-        <span class="formula-unit"></span>
+    <!-- The U.S. Navy body-fat inputs; hip is read for women only. -->
+    <label class="formula-row" title="Neck circumference, just below the larynx with the tape sloping slightly down at the front. Feeds BF%.">
+        <span class="formula-sym">C_neck</span>
+        <span class="formula-name">neck</span>
+        <input type="text" id="formula-neck" inputmode="decimal">
+        <span class="formula-unit">cm</span>
+    </label>
+    <label class="formula-row" title="Waist circumference: at the navel for men, at the narrowest point for women. Feeds BF%.">
+        <span class="formula-sym">C_waist</span>
+        <span class="formula-name">waist</span>
+        <input type="text" id="formula-waist" inputmode="decimal">
+        <span class="formula-unit">cm</span>
+    </label>
+    <label class="formula-row" title="Hip circumference at the widest part of the buttocks. Feeds BF% for women only; the men's equation doesn't use it.">
+        <span class="formula-sym">C_hip</span>
+        <span class="formula-name">hip</span>
+        <input type="text" id="formula-hip" inputmode="decimal">
+        <span class="formula-unit">cm</span>
+    </label>
+    <label class="formula-row" title="The mean of every weigh-in in the 7 days ending at your latest one — m̄(t) = (1/7) × Σ m(t−i). Water and glycogen move the scale by more than a week of fat loss does, and the decay model assumes clean mass, so every formula here reads this rather than a single day's reading.">
+        <span class="formula-sym">m̄</span>
+        <span class="formula-name">7-day rolling average body mass</span>
+        <input type="text" id="formula-body-mass-smooth" inputmode="decimal">
+        <span class="formula-unit">kg</span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">m_des</span>
@@ -57,31 +93,82 @@
         <input type="text" id="formula-target" inputmode="decimal">
         <span class="formula-unit">kg</span>
     </label>
-    <label class="formula-row" title="The BMI your target body mass comes to at your height — BMI = m_des / (h/100)². Type a target mass and this follows it; type a BMI here and the target mass follows instead. The healthy band is 18.5–24.9, and outside it the box goes red. In Solve for → Target body mass both are answers, so neither is typed.">
+    <label class="formula-row" title="The BMI your healthy body mass comes to at your height — BMI = m_des / (h/100)². Type a healthy mass and this follows it; type a BMI here and the healthy mass follows instead. The healthy band is 18.5–24.9, and outside it the box goes red. In Solve for → Healthy body mass both are answers, so neither is typed.">
         <span class="formula-sym">BMI_des</span>
         <span class="formula-name">healthy body mass index</span>
         <input type="text" id="formula-target-bmi" inputmode="decimal">
         <span class="formula-unit">kg/m²</span>
     </label>
-    <!-- Moved up from the protein block to sit with the rest of the profile it's
-         derived from (m̄, h, σ) and directly above BMR: under Katch-McArdle, BMR is
-         built from this figure rather than the other way around, so it has to be
-         known before BMR is. -->
-    <label class="formula-row" title="Lean body mass, Boer (1984): for men, 0.407×m̄ + 0.267×h − 19.2; for women, 0.252×m̄ + 0.473×h − 48.3. Not editable: it is derived from m̄, h and σ. Feeds Katch-McArdle BMR above and the protein/glycogen bands below.">
-        <span class="formula-sym">LBM</span>
-        <span class="formula-name">lean body mass</span>
+    <label class="formula-row" title="Body-fat %, U.S. Navy (Hodgdon & Beckett): for men, 495 / (1.0324 − 0.19077×log10(C_waist − C_neck) + 0.15456×log10(h)) − 450; for women, 495 / (1.29579 − 0.35004×log10(C_waist + C_hip − C_neck) + 0.22100×log10(h)) − 450. Not editable: derived from C_neck, C_waist, C_hip, h and σ.">
+        <span class="formula-sym">BF%</span>
+        <span class="formula-name">body-fat % by U.S. Navy</span>
+        <input type="text" id="formula-bf-pct-navy" inputmode="decimal" readonly>
+        <span class="formula-unit">%</span>
+    </label>
+    <label class="formula-row" title="Lean body mass from the U.S. Navy body-fat %: m̄ × (1 − BF%/100). Not editable: derived from m̄ and BF%. Used across the sheet when Lean body mass is set to U.S. Navy.">
+        <span class="formula-sym">LBM_navy</span>
+        <span class="formula-name">lean body mass by U.S. Navy</span>
+        <input type="text" id="formula-lbm-navy" inputmode="decimal" readonly>
+        <span class="formula-unit">kg</span>
+    </label>
+    <!-- Sits with the rest of the profile it's derived from (m̄, h, σ) and directly
+         above BMR: under Katch-McArdle, BMR is built from this figure rather than
+         the other way around, so it has to be known before BMR is. -->
+    <label class="formula-row" title="Lean body mass, Boer (1984): for men, 0.407×m̄ + 0.267×h − 19.2; for women, 0.252×m̄ + 0.473×h − 48.3. Not editable: it is derived from m̄, h and σ. Used across the sheet (Katch-McArdle, protein, glycogen) when Lean body mass is set to Boer.">
+        <span class="formula-sym">LBM_boer</span>
+        <span class="formula-name">lean body mass by Boer</span>
         <input type="text" id="formula-lbm" inputmode="decimal" readonly>
         <span class="formula-unit">kg</span>
     </label>
-    <hr class="formula-divider">
-    <label class="formula-row" title="Resting energy expenditure at your smoothed body mass, from whichever equation is selected above — what you burn before any movement. Not editable: it is derived from m̄, h, a and σ.">
-        <span class="formula-sym">BMR</span>
-        <span class="formula-name">basal metabolic rate, at m̄</span>
-        <input type="text" id="formula-bmr" inputmode="decimal" readonly>
+    <!-- Both equations shown always, regardless of which one the radio above has
+         active — only the active one feeds the rest of the sheet. -->
+    <label class="formula-row" title="Basal metabolic rate at your smoothed body mass, Mifflin-St Jeor — shown regardless of which equation is active above. Not editable: derived from m̄, h, a and σ. Blank without an age (Mifflin needs age; Katch-McArdle doesn't).">
+        <span class="formula-sym">BMR_mif</span>
+        <span class="formula-name">basal metabolic rate by Mifflin-St Jeor</span>
+        <input type="text" id="formula-bmr-mifflin" inputmode="decimal" readonly>
         <span class="formula-unit">kcal/day</span>
     </label>
-    <!-- Marks the end of the profile block (m̄, h, a, σ, LBM, BMR) before the
-         activity block starts below. -->
+    <label class="formula-row" title="Basal metabolic rate at your smoothed body mass, Katch-McArdle from lean mass — shown regardless of which equation is active above. Not editable: derived from m̄, h and σ.">
+        <span class="formula-sym">BMR_kat</span>
+        <span class="formula-name">basal metabolic rate by Katch-McArdle</span>
+        <input type="text" id="formula-bmr-katch" inputmode="decimal" readonly>
+        <span class="formula-unit">kcal/day</span>
+    </label>
+    <hr class="formula-divider">
+    <!-- The adaptation pair and what it does to BMR by the arrival date t (below). -->
+    <label class="formula-row" title="Metabolic adaptation: on a sustained deficit, BMR falls faster than the lost mass alone explains — less leptin and T3, quieter sympathetic tone, cheaper movement. Roughly 1% of BMR per week on the diet, levelling off near 10–15%. Refeeds and diet breaks push it back toward 0, which is what setting this to 0 models.">
+        <span class="formula-sym">λ</span>
+        <span class="formula-name">weekly metabolic adaptation</span>
+        <input type="text" id="formula-adapt-per-week" inputmode="decimal">
+        <span class="formula-unit">% of BMR/week</span>
+    </label>
+    <label class="formula-row" title="Where λt stops growing. The literature puts the floor around 10–15% below the predicted BMR, reached by week 10–12 — past that, further loss comes from mass rather than deepening adaptation.">
+        <span class="formula-sym">λt_max</span>
+        <span class="formula-name">adaptation ceiling</span>
+        <input type="text" id="formula-adapt-cap" inputmode="decimal">
+        <span class="formula-unit">% of BMR</span>
+    </label>
+    <label class="formula-row" title="BMR_adapt(t) = BMR × (1 − λt), at the day count t below.">
+        <span class="formula-sym">BMR_adp</span>
+        <span class="formula-name">adapted BMR by t</span>
+        <input type="text" id="formula-bmr-adapt" inputmode="decimal" readonly>
+        <span class="formula-unit">kcal/day</span>
+    </label>
+    <label class="formula-row" title="The plateau once BMR has adapted: the same m∞ = (TEI − A)/B with the BMR half of A and B scaled by (1 − λt). It sits ABOVE the m∞ printed in the trace, and that gap is why a constant-BMR forecast tends to overshoot in practice.">
+        <span class="formula-sym">m∞_adp</span>
+        <span class="formula-name">adapted plateau</span>
+        <input type="text" id="formula-plateau-adapt" inputmode="decimal" readonly>
+        <span class="formula-unit">kg</span>
+    </label>
+    <hr class="formula-divider">
+    <label class="formula-row" title="The mean of BMR_mif and BMR_kat, whichever are known.">
+        <span class="formula-sym">BMR_avg</span>
+        <span class="formula-name">average basal metabolic rate</span>
+        <input type="text" id="formula-bmr-avg" inputmode="decimal" readonly>
+        <span class="formula-unit">kcal/day</span>
+    </label>
+    <!-- Marks the end of the profile block (σ, h, a, girths, m̄, m_des, BMI_des, BF%,
+         LBM, BMR) before the activity block starts below. -->
     <hr class="formula-divider">
     <label class="formula-row">
         <span class="formula-sym">τ</span>
@@ -214,31 +301,7 @@
         <input type="date" id="formula-eta">
         <span class="formula-unit" id="formula-eta-note"></span>
     </label>
-    <label class="formula-row" title="Metabolic adaptation: on a sustained deficit, BMR falls faster than the lost mass alone explains — less leptin and T3, quieter sympathetic tone, cheaper movement. Roughly 1% of BMR per week on the diet, levelling off near 10–15%. Refeeds and diet breaks push it back toward 0, which is what setting this to 0 models.">
-        <span class="formula-sym">λ</span>
-        <span class="formula-name">metabolic adaptation, per week on the diet</span>
-        <input type="text" id="formula-adapt-per-week" inputmode="decimal">
-        <span class="formula-unit">% of BMR/week</span>
-    </label>
-    <label class="formula-row" title="Where λt stops growing. The literature puts the floor around 10–15% below the predicted BMR, reached by week 10–12 — past that, further loss comes from mass rather than deepening adaptation.">
-        <span class="formula-sym">λt_max</span>
-        <span class="formula-name">adaptation ceiling</span>
-        <input type="text" id="formula-adapt-cap" inputmode="decimal">
-        <span class="formula-unit">% of BMR</span>
-    </label>
-    <label class="formula-row" title="BMR_adapt(t) = BMR × (1 − λt), at the day count t above.">
-        <span class="formula-sym">BMR_adp</span>
-        <span class="formula-name">adapted BMR by t</span>
-        <input type="text" id="formula-bmr-adapt" inputmode="decimal" readonly>
-        <span class="formula-unit">kcal/day</span>
-    </label>
-    <label class="formula-row" title="The plateau once BMR has adapted: the same m∞ = (TEI − A)/B with the BMR half of A and B scaled by (1 − λt). It sits ABOVE the m∞ printed in the trace, and that gap is why a constant-BMR forecast tends to overshoot in practice.">
-        <span class="formula-sym">m∞_adp</span>
-        <span class="formula-name">adapted plateau, and the overshoot it implies</span>
-        <input type="text" id="formula-plateau-adapt" inputmode="decimal" readonly>
-        <span class="formula-unit">kg</span>
-    </label>
-    <!-- Marks the end of the journey block (t, arrival date, adaptation) before the
+    <!-- Marks the end of the journey block (t, arrival date) before the
          glycogen block starts below. -->
     <hr class="formula-divider">
     <label class="formula-row" title="Skeletal muscle, as a direct share of LBM — not of m̄, since it's a fat-free-mass ratio and m̄ still carries the fat. Skeletal muscle runs roughly 40-50% of lean body mass; the rest of LBM is water, organs, skin and bone, none of which store meaningful glycogen. Higher toward 50% for a more muscular frame, lower toward 40% otherwise.">
@@ -325,7 +388,7 @@
     </label>
     <label class="formula-row">
         <span class="formula-sym">b_max</span>
-        <span class="formula-name">dietary fiber ceiling per kg of body weight</span>
+        <span class="formula-name">dietary fiber ceiling per kg of body mass</span>
         <input type="text" id="formula-fiber-per-kg-max" inputmode="decimal">
         <span class="formula-unit">g/kg/day</span>
     </label>
@@ -355,13 +418,13 @@
          editable. -->
     <label class="formula-row">
         <span class="formula-sym">k_min</span>
-        <span class="formula-name">fat floor, share of intake calories</span>
+        <span class="formula-name">fat floor</span>
         <input type="text" id="formula-fat-pct-min" inputmode="decimal">
         <span class="formula-unit">% of TEI</span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">k_max</span>
-        <span class="formula-name">fat ceiling, share of intake calories</span>
+        <span class="formula-name">fat ceiling</span>
         <input type="text" id="formula-fat-pct-max" inputmode="decimal">
         <span class="formula-unit">% of TEI</span>
     </label>
@@ -387,13 +450,13 @@
          personal parameter, so only the two percentages are editable. -->
     <label class="formula-row">
         <span class="formula-sym">q_min</span>
-        <span class="formula-name">carbohydrate floor, share of intake calories</span>
+        <span class="formula-name">carbohydrate floor</span>
         <input type="text" id="formula-carb-pct-min" inputmode="decimal">
         <span class="formula-unit">% of TEI</span>
     </label>
     <label class="formula-row">
         <span class="formula-sym">q_max</span>
-        <span class="formula-name">carbohydrate ceiling, share of intake calories</span>
+        <span class="formula-name">carbohydrate ceiling</span>
         <input type="text" id="formula-carb-pct-max" inputmode="decimal">
         <span class="formula-unit">% of TEI</span>
     </label>
