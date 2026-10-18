@@ -123,14 +123,18 @@ function katchMcArdleBmr(lbmKg) {
 // box and the protein band show — so the trace's `370 + 21.6 × 61.4` multiplies
 // out to the BMR printed beside it instead of missing it by a kcal.
 function bmrLeanBodyMassKg(bodyMassKg, heightCm, sex) {
-  return Math.round(boerLeanBodyMassKg(bodyMassKg, heightCm, sex) * 10) / 10;
+  return Math.round(leanBodyMassKg(bodyMassKg, heightCm, sex) * 10) / 10;
 }
 
+// 'bmr_avg' runs the plan on the mean of the two equations — still affine in
+// body mass, since both halves are.
 const BMR_FORMULA_KEY = 'BMR_FORMULA';
 const BMR_FORMULA_DEFAULT = 'mifflin';
+const BMR_FORMULA_VALUES = ['mifflin', 'katch', 'bmr_avg'];
 
 function bmrFormula() {
-  return getSettingString(BMR_FORMULA_KEY, BMR_FORMULA_DEFAULT) === 'katch' ? 'katch' : BMR_FORMULA_DEFAULT;
+  const raw = getSettingString(BMR_FORMULA_KEY, BMR_FORMULA_DEFAULT);
+  return BMR_FORMULA_VALUES.includes(raw) ? raw : BMR_FORMULA_DEFAULT;
 }
 
 // Age is a Mifflin term only — Katch-McArdle reads lean mass instead.
@@ -139,6 +143,9 @@ function bmrNeedsAge(formula = bmrFormula()) {
 }
 
 function bmrKcal(bodyMassKg, heightCm, age, sex, formula = bmrFormula()) {
+  if (formula === 'bmr_avg') {
+    return (bmrKcal(bodyMassKg, heightCm, age, sex, 'mifflin') + bmrKcal(bodyMassKg, heightCm, age, sex, 'katch')) / 2;
+  }
   return formula === 'katch'
     ? katchMcArdleBmr(bmrLeanBodyMassKg(bodyMassKg, heightCm, sex))
     : mifflinStJeorBmr(bodyMassKg, heightCm, age, sex);
@@ -282,6 +289,33 @@ function boerLeanBodyMassKg(bodyMassKg, heightCm, sex) {
   return c.perKg * bodyMassKg + c.perCm * heightCm + c.constant;
 }
 
+// U.S. Navy body-fat %, Hodgdon & Beckett (1984), all in cm. Null when a log would be invalid.
+function navyBodyFatPct(sex, heightCm, neckCm, waistCm, hipCm) {
+  if (heightCm == null || neckCm == null || waistCm == null || (sex !== 'male' && hipCm == null)) return null;
+  const girth = sex === 'male' ? waistCm - neckCm : waistCm + hipCm - neckCm;
+  if (!(girth > 0) || !(heightCm > 0)) return null;
+  const density = sex === 'male'
+    ? 1.0324 - 0.19077 * Math.log10(girth) + 0.15456 * Math.log10(heightCm)
+    : 1.29579 - 0.35004 * Math.log10(girth) + 0.22100 * Math.log10(heightCm);
+  return 495 / density - 450;
+}
+
+// Which LBM the sheet runs on (the Lean body mass question): Boer, or U.S. Navy.
+// Both are affine in m (Navy's BF% doesn't depend on mass), so Katch stays affine
+// either way. Navy falls back to Boer until its girths are filled in.
+function leanBodyMassCoefficients(sex, heightCm) {
+  if (currentLbmFormula() === 'navy') {
+    const bfPct = sheetNavyBodyFatPct(sex, heightCm);
+    if (bfPct !== null) return { perKg: 1 - bfPct / 100, perCm: 0, constant: 0, formula: 'navy', bfPct };
+  }
+  return { ...boerLeanBodyMassCoefficients(sex), formula: 'boer' };
+}
+
+function leanBodyMassKg(bodyMassKg, heightCm, sex) {
+  const c = leanBodyMassCoefficients(sex, heightCm);
+  return c.perKg * bodyMassKg + c.perCm * heightCm + c.constant;
+}
+
 // bodyMassKg / heightM².
 function computeBmi(bodyMassKg, heightCm) {
   const heightM = heightCm / 100;
@@ -328,11 +362,13 @@ function maintenanceAffineCoefficients({
   heightCm, age, sex, met, tau, kappa, formula = bmrFormula(), tef = tefPercent(),
 }) {
   const activityPerKg = (met * tau * kappa) / ML_O2_PER_KCAL;
-  const lbm = boerLeanBodyMassCoefficients(sex);
-  const aBmr = formula === 'katch'
-    ? KATCH_BASE_KCAL + KATCH_KCAL_PER_KG_LBM * (lbm.perCm * heightCm + lbm.constant)
-    : 6.25 * heightCm - 5 * age + (sex === 'male' ? 5 : -161);
-  const bBmr = formula === 'katch' ? KATCH_KCAL_PER_KG_LBM * lbm.perKg : 10;
+  const lbm = leanBodyMassCoefficients(sex, heightCm);
+  const aKatch = KATCH_BASE_KCAL + KATCH_KCAL_PER_KG_LBM * (lbm.perCm * heightCm + lbm.constant);
+  const bKatch = KATCH_KCAL_PER_KG_LBM * lbm.perKg;
+  const aMifflin = 6.25 * heightCm - 5 * age + (sex === 'male' ? 5 : -161);
+  const bMifflin = 10;
+  const aBmr = { katch: aKatch, bmr_avg: (aMifflin + aKatch) / 2 }[formula] ?? aMifflin;
+  const bBmr = { katch: bKatch, bmr_avg: (bMifflin + bKatch) / 2 }[formula] ?? bMifflin;
   const divisor = tefDivisor(tef);
 
   return {
@@ -516,6 +552,17 @@ function currentBmrFormula() {
   return document.querySelector('input[name="formula-bmr-formula"]:checked').value;
 }
 
+// Which LBM the preview is running.
+function currentLbmFormula() {
+  return document.querySelector('input[name="formula-lbm-formula"]:checked').value;
+}
+
+// BF% off the typed girths, rounded as its box shows it; null until they're typed.
+function sheetNavyBodyFatPct(sex, heightCm) {
+  const pct = navyBodyFatPct(sex, heightCm, formulaNumber('formula-neck'), formulaNumber('formula-waist'), formulaNumber('formula-hip'));
+  return pct === null || !Number.isFinite(pct) ? null : Math.round(pct * 10) / 10;
+}
+
 function formulaBodyMassKg() {
   return formulaNumber('formula-body-mass-smooth');
 }
@@ -654,11 +701,23 @@ function readFormulaInputs() {
 function renderFormulaSubstituted(rows, plan = null) {
   const el = document.getElementById('formula-substituted');
   el.innerHTML = '';
+  let navyRows = [];
+  try {
+    navyRows = renderNavyFields();
+  } catch (err) {
+    console.error('U.S. Navy body fat failed to render', err);
+  }
   let lbmRows = [];
   try {
     lbmRows = renderLbmField();
   } catch (err) {
     console.error('Lean body mass failed to render', err);
+  }
+  let bmrRows = [];
+  try {
+    bmrRows = renderBmrEquationFields();
+  } catch (err) {
+    console.error('BMR equations failed to render', err);
   }
   let proteinRows = [];
   try {
@@ -704,11 +763,11 @@ function renderFormulaSubstituted(rows, plan = null) {
     console.error('Correction terms failed to render', err);
   }
 
-  // LBM leads (it sits with the profile, ahead of everything `rows` itself starts with),
-  // then `rows` — which carries Δm%, TEF and BMI_des inline, at the legend's own positions —
-  // then the adaptation pair, then glycogen, protein, fiber, fat and carb: the same order
-  // the legend lists them in.
-  [...lbmRows, ...(rows ?? []), ...correctionRows, ...glycogenRows, ...proteinRows, ...fiberRows, ...fatRows, ...carbRows].forEach(([label, value]) => {
+  // BF%, LBM and BMR_avg lead (they sit with the profile, ahead of everything `rows` itself
+  // starts with), then `rows` — which carries Δm%, TEF and BMI_des inline, at the legend's
+  // own positions — then the adaptation pair, then glycogen, protein, fiber, fat and carb:
+  // the same order the legend lists them in.
+  [...navyRows, ...lbmRows, ...bmrRows, ...(rows ?? []), ...correctionRows, ...glycogenRows, ...proteinRows, ...fiberRows, ...fatRows, ...carbRows].forEach(([label, value]) => {
     const p = document.createElement('p');
     const strong = document.createElement('strong');
     strong.textContent = `${label}: `;
@@ -803,7 +862,7 @@ function readProteinFormula() {
   const perKgMax = formulaNumber('formula-protein-per-kg-max');
   if (bodyMassKg === null || heightCm === null || perKgMin === null || perKgMax === null) return null;
 
-  const raw = boerLeanBodyMassKg(bodyMassKg, heightCm, sex);
+  const raw = leanBodyMassKg(bodyMassKg, heightCm, sex);
   if (!Number.isFinite(raw) || raw <= 0) return null;
   const lbmKg = Math.round(raw * 10) / 10;
 
@@ -816,25 +875,83 @@ function readProteinFormula() {
   };
 }
 
-// The LBM box and its trace row alone — split out from the protein band below so it can
-// sit with the profile (m̄/h/σ/BMR) at the top of the sheet, ahead of the calorie solve,
-// while still sharing the one Boer read every other lean-mass consumer here (protein,
-// glycogen) uses.
+// The LBM_boer box and its trace row — Boer always, whichever LBM the Lean body mass
+// question has active (that one is what protein, glycogen and Katch-McArdle read).
 function renderLbmField() {
-  const protein = readProteinFormula();
-
-  if (protein === null) {
+  const bodyMassKg = formulaBodyMassKg();
+  const heightCm = formulaNumber('formula-height');
+  const sex = document.getElementById('formula-sex').value;
+  const raw = bodyMassKg === null || heightCm === null ? null : boerLeanBodyMassKg(bodyMassKg, heightCm, sex);
+  if (raw === null || !Number.isFinite(raw) || raw <= 0) {
     setComputedField('formula-lbm', '—');
     return [];
   }
 
-  const { lbmKg, bodyMassKg, heightCm, sex } = protein;
+  const lbmKg = Math.round(raw * 10) / 10;
   setComputedField('formula-lbm', String(lbmKg));
 
   const coefficients = sex === 'male'
     ? `0.407 × ${bodyMassKg} + 0.267 × ${heightCm} − 19.2`
     : `0.252 × ${bodyMassKg} + 0.473 × ${heightCm} − 48.3`;
-  return [['LBM', `${coefficients}  =  ${lbmKg} kg`]];
+  return [['LBM_boer', `${coefficients}  =  ${lbmKg} kg`]];
+}
+
+// The BF% and LBM_navy boxes and their rows. BF% is rounded first so the trace multiplies out.
+function renderNavyFields() {
+  const heightCm = formulaNumber('formula-height');
+  const neckCm = formulaNumber('formula-neck');
+  const waistCm = formulaNumber('formula-waist');
+  const hipCm = formulaNumber('formula-hip');
+  const sex = document.getElementById('formula-sex').value;
+  const male = sex === 'male';
+  const bfPct = sheetNavyBodyFatPct(sex, heightCm);
+  if (bfPct === null) {
+    setComputedField('formula-bf-pct-navy', '—');
+    setComputedField('formula-lbm-navy', '—');
+    return [];
+  }
+
+  setComputedField('formula-bf-pct-navy', String(bfPct));
+  const bfRow = male
+    ? ['BF%', `495 / (1.0324 − 0.19077 × log10(${waistCm} − ${neckCm}) + 0.15456 × log10(${heightCm})) − 450  =  ${bfPct}%`]
+    : ['BF%', `495 / (1.29579 − 0.35004 × log10(${waistCm} + ${hipCm} − ${neckCm}) + 0.22100 × log10(${heightCm})) − 450  =  ${bfPct}%`];
+
+  const bodyMassKg = formulaBodyMassKg();
+  if (bodyMassKg === null) {
+    setComputedField('formula-lbm-navy', '—');
+    return [bfRow];
+  }
+  const fatKgShown = Math.round(bodyMassKg * bfPct / 10) / 10;
+  const lbmNavyKg = Math.round((bodyMassKg - fatKgShown) * 10) / 10;
+  setComputedField('formula-lbm-navy', String(lbmNavyKg));
+  return [
+    bfRow,
+    ['m_fat', `${bodyMassKg} × ${bfPct} / 100  =  ${fatKgShown} kg`],
+    ['LBM_navy', `${bodyMassKg} − ${fatKgShown}  =  ${lbmNavyKg} kg`],
+  ];
+}
+
+// BMR_mif, BMR_kat and BMR_avg — both equations always, whichever the radio has
+// active. Mifflin needs age, so it (and its share of the mean) is left out without one.
+function renderBmrEquationFields() {
+  const bodyMassKg = formulaBodyMassKg();
+  const heightCm = formulaNumber('formula-height');
+  const age = formulaNumber('formula-age');
+  const sex = document.getElementById('formula-sex').value;
+  if (bodyMassKg === null || heightCm === null) {
+    ['formula-bmr-mifflin', 'formula-bmr-katch', 'formula-bmr-avg'].forEach((id) => setComputedField(id, '—'));
+    return [];
+  }
+
+  const parts = [];
+  if (age !== null) parts.push(['BMR_mif', Math.round(bmrKcal(bodyMassKg, heightCm, age, sex, 'mifflin'))]);
+  parts.push(['BMR_kat', Math.round(bmrKcal(bodyMassKg, heightCm, age, sex, 'katch'))]);
+  setComputedField('formula-bmr-mifflin', age === null ? '—' : String(parts[0][1]));
+  setComputedField('formula-bmr-katch', String(parts[parts.length - 1][1]));
+
+  const avg = Math.round(parts.reduce((sum, [, v]) => sum + v, 0) / parts.length);
+  setComputedField('formula-bmr-avg', String(avg));
+  return [['BMR_avg', `(${parts.map(([, v]) => v).join(' + ')}) / ${parts.length}  =  ${avg} kcal/day`]];
 }
 
 function renderProteinFields() {
@@ -1003,7 +1120,7 @@ function readGlycogenSwingFormula() {
   if (bodyMassKg === null || heightCm === null || skeletalFrac === null || gPerKgMuscle === null
     || liverG === null || waterRatio === null) return null;
 
-  const rawLbm = boerLeanBodyMassKg(bodyMassKg, heightCm, sex);
+  const rawLbm = leanBodyMassKg(bodyMassKg, heightCm, sex);
   if (!Number.isFinite(rawLbm) || rawLbm <= 0) return null;
   // Rounded to 0.1 kg before it's used further, same as readProteinFormula — otherwise
   // the trace's `s × LBM = m_musc` line would show a rounded LBM that doesn't actually
@@ -1132,6 +1249,11 @@ function renderWeeklyLossPctField() {
 }
 
 function formulaBmrRow(bmr, { bodyMassKg, heightCm, age, sex, formula }) {
+  if (formula === 'bmr_avg') {
+    const mif = Math.round(bmrKcal(bodyMassKg, heightCm, age, sex, 'mifflin'));
+    const kat = Math.round(bmrKcal(bodyMassKg, heightCm, age, sex, 'katch'));
+    return ['REE', `(${mif} + ${kat}) / 2  =  ${Math.round(bmr)} kcal/day — BMR_avg, the mean of Mifflin-St Jeor and Katch-McArdle`];
+  }
   if (formula === 'katch') {
     return ['REE', `370 + 21.6 × ${bmrLeanBodyMassKg(bodyMassKg, heightCm, sex)}  =  ${Math.round(bmr)} kcal/day — Katch-McArdle, from lean mass`];
   }
@@ -1141,14 +1263,16 @@ function formulaBmrRow(bmr, { bodyMassKg, heightCm, age, sex, formula }) {
 
 function formulaAffineRows(coefficients, { heightCm, age, sex, met, tau, kappa }) {
   const { a, b, tefDivisor: divisor, formula } = coefficients;
-  const lbm = boerLeanBodyMassCoefficients(sex);
+  const lbm = leanBodyMassCoefficients(sex, heightCm);
   const sigma = sex === 'male' ? '+ 5' : '− 161';
-  const aTerms = formula === 'katch'
-    ? `370 + 21.6 × (${lbm.perCm} × ${heightCm} − ${Math.abs(lbm.constant)})`
-    : `6.25 × ${heightCm} − 5 × ${age} ${sigma}`;
-  const bTerms = formula === 'katch'
-    ? `21.6 × ${lbm.perKg} + ${met} × ${tau} × ${kappa} / 200`
-    : `10 + ${met} × ${tau} × ${kappa} / 200`;
+  const navy = lbm.formula === 'navy';
+  const aKatch = navy ? '370' : `370 + 21.6 × (${lbm.perCm} × ${heightCm} − ${Math.abs(lbm.constant)})`;
+  const bKatch = `21.6 × ${navy ? `(1 − ${lbm.bfPct}/100)` : lbm.perKg}`;
+  const aMifflin = `6.25 × ${heightCm} − 5 × ${age} ${sigma}`;
+  const aBmrTerms = { katch: aKatch, bmr_avg: `(${aMifflin} + ${aKatch}) / 2` }[formula] ?? aMifflin;
+  const bBmrTerms = { katch: bKatch, bmr_avg: `(10 + ${bKatch}) / 2` }[formula] ?? '10';
+  const aTerms = aBmrTerms;
+  const bTerms = `${bBmrTerms} + ${met} × ${tau} × ${kappa} / 200`;
   const byDivisor = divisor === 1 ? '' : `, all / ${Math.round(divisor * 1000) / 1000}`;
   return [
     ['A', `${aTerms}${byDivisor}  =  ${Math.round(a)} kcal/day`],
@@ -1248,7 +1372,7 @@ function renderCorrectionFields(plan) {
   const { pctPerWeek, pctCap } = readAdaptationInputs();
 
   if (plan === null) {
-    ['formula-bmr', 'formula-activity-kcal', 'formula-maintenance', 'formula-deficit', 'formula-deficit-bmr-pct', bmrEl, plateauEl].forEach((id) => setComputedField(id, '—'));
+    ['formula-activity-kcal', 'formula-maintenance', 'formula-deficit', 'formula-deficit-bmr-pct', bmrEl, plateauEl].forEach((id) => setComputedField(id, '—'));
     document.getElementById('formula-deficit-bmr-pct').classList.remove('formula-pct-over');
     renderSleepDeprivationField(null);
     return [];
@@ -1257,10 +1381,9 @@ function renderCorrectionFields(plan) {
   const { intakeKcal, coefficients, bmr, activityKcal, deficit, days, journey } = plan;
   const rows = [];
 
-  // Two figures with boxes but no trace rows of their own here — BMR and E_act already print
-  // their substituted lines as rows of every mode, D prints its own in all but TARGET_MASS,
-  // and M is just the BMR and E_act boxes added together in front of the reader.
-  setComputedField('formula-bmr', String(Math.round(bmr)));
+  // Boxes with no trace rows of their own here — E_act already prints its substituted line
+  // as a row of every mode, D prints its own in all but TARGET_MASS, and M is just BMR and
+  // the E_act box added together in front of the reader.
   setComputedField('formula-activity-kcal', String(Math.round(activityKcal)));
   setComputedField('formula-maintenance', String(Math.round(bmr + activityKcal)));
   setComputedField('formula-deficit', String(Math.round(deficit)));
@@ -1475,7 +1598,7 @@ function readMacroBandCoefficients() {
 // respectively); fiber's floor, fat and carb move with TEI instead, which is
 // constant pre-arrival and a step up to the maintenance level after it.
 function macroBandsAtMass(macro, mass, teiKcal) {
-  const lbmKg = boerLeanBodyMassKg(mass, macro.heightCm, macro.sex);
+  const lbmKg = leanBodyMassKg(mass, macro.heightCm, macro.sex);
   return {
     protein: { minG: macro.proteinPerKgMin * lbmKg, maxG: macro.proteinPerKgMax * lbmKg },
     fiber: { minG: macro.fiberPerKcalMin * (teiKcal / 1000), maxG: macro.fiberPerKgMax * mass },
@@ -2602,6 +2725,7 @@ function initSheet() {
   weeklyLossKnownField = 'kg';
   targetMassKnownField = 'bmi';
   document.querySelector('input[name="formula-bmr-formula"][value="mifflin"]').checked = true;
+  document.querySelector('input[name="formula-lbm-formula"][value="boer"]').checked = true;
   loadDefaultInputs();
   applySolveForMode('TEI');
   renderFormulaPreview();
@@ -2615,13 +2739,14 @@ function wireSheet() {
     ...CARB_FORMULA_FIELDS.map((f) => f.inputId),
     ...ADAPT_FORMULA_FIELDS.map((f) => f.inputId),
     'formula-body-mass-smooth', 'formula-height', 'formula-age',
+    'formula-neck', 'formula-waist', 'formula-hip',
     'formula-glycogen-skeletal-frac', 'formula-glycogen-per-kg-muscle', 'formula-glycogen-liver',
     'formula-glycogen-water-ratio'].forEach((id) => {
     document.getElementById(id).addEventListener('input', renderFormulaPreview);
   });
   document.getElementById('formula-sex').addEventListener('change', renderFormulaPreview);
 
-  document.querySelectorAll('input[name="formula-bmr-formula"]').forEach((radio) => {
+  document.querySelectorAll('input[name="formula-bmr-formula"], input[name="formula-lbm-formula"]').forEach((radio) => {
     radio.addEventListener('change', renderFormulaPreview);
   });
 

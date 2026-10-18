@@ -20,7 +20,7 @@ This model is provided for educational and informational purposes only and is no
 - `content/7 Conclusion.tex` — the conclusion.
 - `content/8 Glossary.tex` — acronyms, symbols and variables, subscripts and indices.
 - `content/9 References.bib` — the model's bibliography.
-- `content/10 Appendix Interactive Calculation Sheet.html` — the interactive calculator UI; solves BMR, AEE, TEI, the protein/fiber/fat/carbohydrate bands and the body-mass trajectory. The two appendix sheets below read their "Desire" targets from its live outputs.
+- `content/10 Appendix Interactive Calculation Sheet.html` — the interactive calculator UI; solves LBM (Boer or U.S. Navy), BMR (Mifflin-St Jeor, Katch-McArdle or their average), AEE, TEI, the protein/fiber/fat/carbohydrate bands and the body-mass trajectory. The two appendix sheets below read their "Desire" targets from its live outputs.
 - `content/11 Appendix Activity Energy Expenditure Calculation Sheet.html` — a checkbox list of exercises whose per-row Calories scale from body mass, MET and duration; a **Total** row sums the ticked activities and a **Desire** row shows Appendix 10's target AEE.
 - `content/12 Appendix Intake Calorie Calculation Sheet.html` — a checkbox list of foods (copied from the personal Nutrition table) whose Calories, Protein, Dietary Fiber, Fat, Carb and TEF scale from a typed gram Amount; a **Total** row sums the ticked foods, **Desire Min**/**Desire Max** rows show Appendix 10's macro bands and calorie/TEF targets, and a 🧬 button opens each food's scaled micronutrient panel in a popup.
 - `assets/script.js` — page logic.
