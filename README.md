@@ -10,20 +10,22 @@ This model is provided for educational and informational purposes only and is no
 
 - `index.html` — page loader; fetches and assembles the files below into the page, with the disclaimer, the QR code, and the contents sidebar.
 - `content/0 Abstract.tex` — the abstract.
-- `content/1 Introduction.tex` — the introduction.
+- `content/1 Introduction.tex` — the introduction: obesity statistics and the case for a multi-input multi-output (MIMO) view of metabolism.
 - `content/2 Literature Review.tex` — the literature review.
-- `content/3 System Diagram.html` — the system block diagram, as SVG for the site.
-- `content/3 System Diagram.tex` — the system block diagram.
-- `content/4 Human Metabolic System Model.tex` — the model's equations.
+- `content/3 System Diagram.tex` — the system diagrams: the forward human metabolic system (Fig. 1), its inverse used as a feedforward (Fig. 2), and the full loop with the human decision maker between them (Fig. 3).
+- `content/3 System Diagram.html` — Fig. 1, the forward system block diagram, as SVG for the site.
+- `content/3 Inverse System Diagram.html` — Fig. 2, the inverse system block diagram, as SVG for the site.
+- `content/3 Full Loop Diagram.html` — Fig. 3, the full-loop block diagram, as SVG for the site.
+- `content/4 Human Metabolic System Model.tex` — the model's equations: the body profile (including Boer and U.S. Navy lean body mass), the four basal metabolic rates (Mifflin-St Jeor, Katch-McArdle, calibrated, adapted) and their average, the energy balance, and the mass trajectory.
 - `content/5 Dietary Requirements.tex` — protein, dietary fiber, fat, and carbohydrate targets, plus deficit rate/magnitude safety limits.
 - `content/6 Case Study.tex` — the case study.
 - `content/7 Conclusion.tex` — the conclusion.
 - `content/8 Glossary.tex` — acronyms, symbols and variables, subscripts and indices.
 - `content/9 References.bib` — the model's bibliography.
-- `content/10 Appendix Interactive Calculation Sheet.html` — the interactive calculator UI; solves LBM (Boer or U.S. Navy), BMR (Mifflin-St Jeor, Katch-McArdle or their average), AEE, TEI, the protein/fiber/fat/carbohydrate bands and the body-mass trajectory. The two appendix sheets below read their "Desire" targets from its live outputs.
+- `content/10 Appendix Interactive Calculation Sheet.html` — the interactive calculator UI; opens on the same defaults as the ledger app's Health → Tune page and solves LBM (Boer or U.S. Navy), BMR (Mifflin-St Jeor, Katch-McArdle or their average), AEE, TEI, the protein/fiber/fat/carbohydrate bands and the body-mass trajectory. The two appendix sheets below read their "Desire" targets from its live outputs.
 - `content/11 Appendix Activity Energy Expenditure Calculation Sheet.html` — a checkbox list of exercises whose per-row Calories scale from body mass, MET and duration; a **Total** row sums the ticked activities and a **Desire** row shows Appendix 10's target AEE.
 - `content/12 Appendix Intake Calorie Calculation Sheet.html` — a checkbox list of foods (copied from the personal Nutrition table) whose Calories, Protein, Dietary Fiber, Fat, Carb and TEF scale from a typed gram Amount; a **Total** row sums the ticked foods, **Desire Min**/**Desire Max** rows show Appendix 10's macro bands and calorie/TEF targets, and a 🧬 button opens each food's scaled micronutrient panel in a popup.
-- `assets/script.js` — page logic.
+- `assets/script.js` — page logic; fills each `\begin{figure}` in the system-diagram fragment with its SVG file, in order.
 - `assets/style.css` — page styling.
 - `assets/qr-metabolic-model.svg` — QR code linking to the live site.
 - `favicon.svg` — site icon.
