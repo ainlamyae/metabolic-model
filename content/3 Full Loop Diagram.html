@@ -1,0 +1,62 @@
+<figure class="mtc-figure" id="fig_fullloopdiagram">
+<svg viewBox="120 20 1220 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Block diagram of the full loop: the inverse model proposes the daily inputs, the human decision maker chooses the actual ones, and they drive the human metabolic system, whose measured body mass returns to the inverse model" style="width:100%;height:auto;display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <defs>
+    <marker id="loopArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"></path>
+    </marker>
+  </defs>
+
+  <!-- Three blocks, left to right: the planner (Fig. 2), the decision maker, the plant (Fig. 1). -->
+  <g fill="var(--ink)" text-anchor="middle">
+    <rect x="300" y="110" width="230" height="90" rx="10" fill="#dbeafe" fill-opacity="0.6" stroke="var(--ink-faint)" stroke-width="1.6"></rect>
+    <text x="415" y="145" font-size="12" font-weight="700">Inverse Human Metabolic</text>
+    <text x="415" y="162" font-size="12" font-weight="700">System Model</text>
+    <text x="415" y="183" font-size="11" fill="var(--ink-soft)">feedforward · Fig. 2</text>
+
+    <rect x="660" y="110" width="230" height="90" rx="10" fill="#dcfce7" fill-opacity="0.6" stroke="var(--ink-faint)" stroke-width="1.6"></rect>
+    <text x="775" y="152" font-size="12" font-weight="700">Human Decision Maker</text>
+    <text x="775" y="173" font-size="11" fill="var(--ink-soft)">human effort</text>
+
+    <rect x="1020" y="110" width="230" height="90" rx="10" fill="#fef9c3" fill-opacity="0.6" stroke="var(--ink-faint)" stroke-width="1.6"></rect>
+    <text x="1135" y="145" font-size="12" font-weight="700">Human Metabolic</text>
+    <text x="1135" y="162" font-size="12" font-weight="700">System Model</text>
+    <text x="1135" y="183" font-size="11" fill="var(--ink-soft)">system under control · Fig. 1</text>
+  </g>
+
+  <g fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#loopArrow)">
+    <path d="M130,155 L300,155"></path>
+    <path d="M530,155 L660,155"></path>
+    <path d="M890,155 L1020,155"></path>
+    <path d="M1250,155 L1330,155"></path>
+    <path d="M1290,155 L1290,250 L415,250 L415,200"></path>
+    <path d="M1135,250 L1135,200"></path>
+    <path d="M415,50 L415,110"></path>
+    <path d="M1135,80 L1135,110"></path>
+    <path d="M415,80 L1135,80" marker-end="none"></path>
+  </g>
+  <circle cx="1290" cy="155" r="2.5" fill="var(--ink-faint)"></circle>
+  <circle cx="1135" cy="250" r="2.5" fill="var(--ink-faint)"></circle>
+  <circle cx="415" cy="80" r="2.5" fill="var(--ink-faint)"></circle>
+
+  <g font-size="11.5" fill="var(--ink-soft)">
+    <text x="135" y="148" font-size="12.5" fill="var(--ink)">Δm_des</text>
+    <text x="135" y="172" text-anchor="start">(desired body mass</text>
+    <text x="135" y="187" text-anchor="start">change, kg/week)</text>
+
+    <text x="423" y="45" font-size="12.5" fill="var(--ink)">h, a, σ, t</text>
+    <text x="490" y="45" text-anchor="start">(parameters and time, to both models)</text>
+
+    <text x="595" y="130" text-anchor="middle" fill="var(--ink)">τ, MET, TEI, s</text>
+    <text x="595" y="144" text-anchor="middle" fill="var(--ink)">P, F, G, C</text>
+    <text x="595" y="172" text-anchor="middle">(proposed)</text>
+
+    <text x="955" y="144" text-anchor="middle" fill="var(--ink)">τ, MET, TEI, s</text>
+    <text x="955" y="172" text-anchor="middle">(actual)</text>
+
+    <text x="1300" y="140" font-size="12.5" fill="var(--ink)">m</text>
+
+    <text x="850" y="243" text-anchor="middle">m (measured body mass, kg)</text>
+  </g>
+</svg>
+<figcaption>Fig. 3. Block diagram of the full loop. The inverse human metabolic system model of Fig. 2 turns the desired body mass change Δm_des into proposed daily inputs — activity (τ, MET), total energy intake (TEI), sleep duration (s), and the protein, dietary fiber, fat, and carbohydrate requirements (P, F, G, C) — as a feedforward. The human decision maker, the brain, weighs that proposal and chooses the actual inputs, which drive the human metabolic system model of Fig. 1, the system under control. Height, age, sex, and elapsed time (h, a, σ, t) enter both models, and the measured body mass m returns both to the human metabolic system model, through its 7-day rolling average, and to the inverse model, which proposes again.</figcaption>
+</figure>

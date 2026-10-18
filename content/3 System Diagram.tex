@@ -97,3 +97,132 @@ The human metabolic system is a multi-input, single-output system: several input
 \end{figure}
 
 \subsection{Inverse Metabolic System as Feedforward}
+
+The inverse model runs the human metabolic system of Fig.~1 backwards, as shown in Fig.~2. Like the forward model, it reads the measured body mass m through the 7-day rolling average m̄, height, age, and sex (h, a, σ) through the basal metabolic rate, and the elapsed time t; to these it adds the desired body mass change Δm\_des, which defines the daily energy deficit D = Δm\_des×ρ/7. The energy balance then splits the intake that delivers D into its components, so the remaining inputs of the forward model become outputs of the inverse: activity (τ, MET), total energy intake (TEI), and sleep duration (s), with TEI in turn setting the daily protein, dietary fiber, fat, and carbohydrate requirements of Section 5. The inverse model assumes the glycogen and water swing ΔM\_gly is constant, so the whole desired change is taken as fat mass and the Glycogen + Water Swing block is left out.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance = 7mm and 18mm,
+  block/.style  = {draw, rectangle, rounded corners=2pt, fill=white,
+                   minimum width=41mm, minimum height=13mm, align=center, font=\small},
+  signal/.style = {-Latex, thick},
+  branch/.style = {circle, fill, inner sep=1.2pt},
+  system/.style = {draw, rounded corners=6pt, fill=blue!10, inner sep=6mm},
+  lbl/.style    = {font=\footnotesize},
+]
+
+% ---- Input blocks on the left, as in Fig. 1 ----
+% Every block: long name on top, its variable below in gray.
+\node[block] (rolling) {7-Day Rolling Average\\ \textcolor{gray}{$\bar{m}$}};
+\node[block, below=of rolling] (bmr)     {Basal Metabolic Rate\\ \textcolor{gray}{$BMR$}};
+\node[block, below=20mm of bmr] (deficit) {Daily Energy Deficit\\ \textcolor{gray}{$D = \Delta m_{des} \times \rho / 7$}};
+
+\node[block, minimum height=24mm, right=20mm of deficit] (balance)
+  {Energy Balance\\ \textcolor{gray}{$TEI = D + BMR + AEE + TEF$}};
+
+% ---- Output blocks on the right: each hands back one input of Fig. 1 ----
+\node[block, right=20mm of balance, yshift=14mm] (act)   {Activity Energy Expenditure\\ \textcolor{gray}{$AEE$}};
+\node[block, below=of act]                       (tef)   {Thermic Effect of Food\\ \textcolor{gray}{$TEF$}};
+\node[block, below=of tef]                       (sleep) {Sleep Deprivation Effect\\ \textcolor{gray}{$SD$}};
+
+% ---- TEI sets the dietary requirements (Section 5), inside the boundary ----
+\coordinate (tei-bus) at ($(tef.east)+(10mm,0)$);
+\node[block, minimum width=34mm, right=8mm of tei-bus, yshift=21mm]  (protein) {Protein\\ \textcolor{gray}{$P = p \times LBM$}};
+\node[block, minimum width=34mm, below=3mm of protein] (fiber)   {Dietary Fiber\\ \textcolor{gray}{$F = b \times TEI / 1000$}};
+\node[block, minimum width=34mm, below=3mm of fiber]   (fat)     {Fat\\ \textcolor{gray}{$G = k \times TEI / 9$}};
+\node[block, minimum width=34mm, below=3mm of fat]     (carb)    {Carbohydrate\\ \textcolor{gray}{$C = q \times TEI / 4$}};
+
+% ---- System boundary ----
+\begin{scope}[on background layer]
+  \node[system, fit=(rolling)(bmr)(deficit)(balance)(act)(tef)(sleep)(protein)(carb),
+        label={[font=\bfseries]above:Inverse Human Metabolic System Model}] (system) {};
+\end{scope}
+
+% ---- External inputs (all enter from the left) ----
+\coordinate[left=14mm of rolling.west] (in-m);
+\coordinate[left=14mm of bmr.west]     (in-bmr);
+\coordinate[left=14mm of deficit.west] (in-dm);
+\coordinate (in-t) at ([yshift=3mm]in-dm);
+
+\draw[signal] (in-m)   -- node[lbl, above, pos=0.35] {$m$}                       (rolling.west);
+\draw[signal] ($(in-bmr)+(0,3mm)$) -- node[lbl, above, pos=0.35] {$h, a, \sigma$} ([yshift=3mm]bmr.west);
+\draw[signal] (in-t) -- node[lbl, above, pos=0.2] {$t$} ([yshift=3mm]deficit.west);
+\draw[signal] ([yshift=-3mm]in-dm) -- node[lbl, below, pos=0.35] {$\Delta m_{des}$} ([yshift=-3mm]deficit.west);
+\coordinate (t-branch) at ($(in-t)+(6mm,0)$);
+\node[branch] at (t-branch) {};
+\draw[signal] (t-branch) |- ([yshift=-3mm]bmr.west);
+
+% ---- Internal signals ----
+\draw[signal] (rolling.south) -- node[lbl, right] {$\bar{m}$} (bmr.north);
+\draw[signal] (rolling.east) -| node[lbl, above, pos=0.25] {$\bar{m}$} (act.north);
+\draw[signal] (bmr.east) -| node[lbl, above, pos=0.25] {$BMR$} (balance.north);
+\draw[signal] (deficit.east) -- node[lbl, above] {$D$} (deficit.east -| balance.west);
+\draw[signal] (balance.east |- act.west) -- node[lbl, above] {$AEE$} (act.west);
+\draw[signal] (balance.east |- tef.west) -- node[lbl, above] {$TEF$} (tef.west);
+\draw[signal] ([xshift=-8mm]balance.south) |- node[lbl, above, pos=0.75] {$SD$} (sleep.west);
+\coordinate (tei-join) at ($(tef.east)+(4mm,0)$);
+\node[branch] at (tei-join) {};
+\draw[signal] ([xshift=8mm]balance.south) |- node[lbl, above, pos=0.7] {$TEI$} ($(tef.south)!0.5!(sleep.north) -| tei-join$)
+              -- (tei-join);
+
+% ---- Outputs: the other inputs of Fig. 1, to the right ----
+\draw[signal] (act.east) -- ++(6mm,0) |- ([yshift=5mm]protein.north east) -- ++(12mm,0) node[lbl, right] {$\tau, MET$};
+\draw[signal] (sleep.east) -- ++(6mm,0) |- ([yshift=-5mm]carb.south east) -- ++(12mm,0) node[lbl, right] {$s$};
+
+% ---- TEI into the four dietary-requirement blocks ----
+\node[branch] at (tei-bus) {};
+\draw[signal] (tef.east) -- node[lbl, above, pos=0.6] {$TEI$} (tei-bus);
+\foreach \macro/\sym in {protein/P, fiber/F, fat/G, carb/C} {
+  \draw[signal] (tei-bus) |- (\macro.west);
+  \draw[signal] (\macro.east) -- ++(8mm,0) node[lbl, right] {$\sym$};
+}
+
+\end{tikzpicture}
+\caption[Block diagram of the inverse human metabolic system model.]{Block diagram of the inverse human metabolic system model, used as a feedforward controller: Fig.~\ref{fig_systemdiagram} run backwards; the shaded region marks the system boundary. Inputs enter from the left: the measured body mass $m$ into the 7-Day Rolling Average, whose $\bar{m}$ feeds the Basal Metabolic Rate and Activity Energy Expenditure blocks; height, age, and sex ($h, a, \sigma$) into the Basal Metabolic Rate, whose $BMR$ feeds the Energy Balance; elapsed time ($t$) into the Daily Energy Deficit and the Basal Metabolic Rate; and the desired body mass change $\Delta m_{des}$, which defines the Daily Energy Deficit $D$; the glycogen and water swing is held constant, so it has no block here. The Energy Balance block then splits the intake that delivers $D$ into its remaining components, and the other inputs of Fig.~\ref{fig_systemdiagram} leave on the right as outputs: activity ($\tau$, $MET$) from the Activity Energy Expenditure block, total energy intake ($TEI$) from the Thermic Effect of Food block and the Energy Balance, and sleep duration ($s$) from the Sleep Deprivation Effect block. $TEI$ in turn sets the daily Protein, Dietary Fiber, Fat, and Carbohydrate requirements ($P$, $F$, $G$, $C$) of Section 5, which leave the boundary alongside them.}
+\label{fig_inversediagram}
+\end{figure}
+
+\subsection{Full-Loop Human Metabolic Control}
+
+The full loop places a human decision maker between the two models, as shown in Fig.~3. The inverse model proposes the daily inputs — activity, intake, sleep, and the macronutrient requirements — as a feedforward, but it acts on nothing itself: the human brain weighs that proposal and decides what is actually eaten, how much is moved, and how long is slept. Those actual inputs drive the human metabolic system, the system under control, and its measured body mass returns to the inverse model, which proposes again; any gap between the proposed and the actual inputs reaches the body as a disturbance that the next proposal corrects.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance = 7mm and 18mm,
+  main/.style   = {draw, rectangle, rounded corners=4pt, minimum width=46mm,
+                   minimum height=20mm, align=center, font=\small\bfseries},
+  signal/.style = {-Latex, thick},
+  branch/.style = {circle, fill, inner sep=1.2pt},
+  lbl/.style    = {font=\footnotesize, align=center},
+]
+
+% ---- The planner (Fig. 2), the decision maker, the plant (Fig. 1) ----
+\node[main, fill=blue!10] (inverse) {Inverse Human Metabolic\\ System Model\\ \textcolor{gray}{\mdseries feedforward · Fig.~\ref{fig_inversediagram}}};
+\node[main, fill=green!10, right=of inverse] (human) {Human Decision Maker\\\textcolor{gray}{\mdseries human effort}};
+\node[main, fill=yellow!20, right=of human] (plant) {Human Metabolic\\ System Model\\ \textcolor{gray}{\mdseries system under control · Fig.~\ref{fig_systemdiagram}}};
+
+% ---- Signals ----
+\draw[signal] ($(inverse.west)+(-22mm,0)$) node[lbl, left] {$\Delta m_{des}$ (desired body\\ mass change, kg/week)} -- (inverse.west);
+\draw[signal] (inverse.east) -- node[lbl, above] {$\tau, MET, TEI, s$\\ $P, F, G, C$} node[lbl, below] {(proposed)} (human.west);
+\draw[signal] (human.east) -- node[lbl, above] {$\tau, MET, TEI, s$} node[lbl, below] {(actual)} (plant.west);
+
+\coordinate[right=16mm of plant.east] (out);
+\draw[signal] (plant.east) -- (out) node[lbl, right] {$m$};
+\coordinate (tap) at ($(plant.east)!0.5!(out)$);
+\node[branch] at (tap) {};
+\draw[signal] (tap) |- ($(inverse.south)+(0,-10mm)$) node[lbl, below, pos=0.75] {$m$ (measured body mass, kg)} -- (inverse.south);
+\coordinate (fb-plant) at ($(plant.south)+(0,-10mm)$);
+\node[branch] at (fb-plant) {};
+\draw[signal] (fb-plant) -- (plant.south);
+
+\coordinate (par) at ($(inverse.north)+(0,10mm)$);
+\node[branch] at (par) {};
+\draw[signal] ($(par)+(0,6mm)$) node[lbl, above] {$h, a, \sigma, t$} -- (inverse.north);
+\draw[signal] (par) -| (plant.north);
+
+\end{tikzpicture}
+\caption[Block diagram of the full loop.]{Block diagram of the full loop. The inverse human metabolic system model of Fig.~\ref{fig_inversediagram} turns the desired body mass change $\Delta m_{des}$ into proposed daily inputs — activity ($\tau$, $MET$), total energy intake ($TEI$), sleep duration ($s$), and the protein, dietary fiber, fat, and carbohydrate requirements ($P$, $F$, $G$, $C$) — as a feedforward. The human decision maker, the brain, weighs that proposal and chooses the actual inputs, which drive the human metabolic system model of Fig.~\ref{fig_systemdiagram}, the system under control. Height, age, sex, and elapsed time ($h, a, \sigma, t$) enter both models, and the measured body mass $m$ returns both to the human metabolic system model, through its 7-day rolling average, and to the inverse model, which proposes again.}
+\label{fig_fullloopdiagram}
+\end{figure}

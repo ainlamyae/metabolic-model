@@ -37,11 +37,11 @@ const ACTIVITY_TARGET_MIN_DEFAULT = 100;
 const PROTEIN_G_PER_KG_LBM_MIN_DEFAULT = 1.8;
 const PROTEIN_G_PER_KG_LBM_MAX_DEFAULT = 2.2;
 
-// The fiber band's two coefficients. 14 g/1000 kcal is the USDA/Dietary Guidelines for
-// Americans rule of thumb (derived from the ~25g/2000kcal adult reference intake); 0.5 g/kg
-// body weight is a common upper-bound heuristic so the ceiling scales with the person rather
-// than staying a flat number regardless of size.
-const FIBER_G_PER_1000_KCAL_MIN_DEFAULT = 14;
+// The fiber band's two coefficients, the ledger app's Tune defaults. 17 g/1000 kcal sits
+// above the USDA rule of thumb (14 g/1000 kcal); 0.5 g/kg body mass is a common upper-bound
+// heuristic so the ceiling scales with the person rather than staying a flat number
+// regardless of size.
+const FIBER_G_PER_1000_KCAL_MIN_DEFAULT = 17;
 const FIBER_G_PER_KG_MAX_DEFAULT = 0.5;
 
 // The fat band's two coefficients — 20-35% of total energy from fat is the Institute of
@@ -56,21 +56,19 @@ const FAT_PCT_OF_KCAL_MAX_DEFAULT = 35;
 // plain constant rather than an overridable setting the way the two percentages above are.
 const KCAL_PER_G_FAT = 9;
 
-// The carb band's two coefficients — 45-65% of total energy from carbohydrate is the same
-// AMDR report's range for carbohydrate (Dietary Reference Intakes for Energy, Carbohydrate,
-// Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids, 2005), also carried forward
-// by the USDA Dietary Guidelines for Americans. Both ends scale off TEI, same shape as the
-// fat band above.
-const CARB_PCT_OF_KCAL_MIN_DEFAULT = 45;
-const CARB_PCT_OF_KCAL_MAX_DEFAULT = 65;
+// The carb band's two coefficients, the ledger app's Tune defaults — 30-50% of total energy,
+// below the IOM AMDR's 45-65% to leave room for protein on a deficit. Both ends scale off
+// TEI, same shape as the fat band above.
+const CARB_PCT_OF_KCAL_MIN_DEFAULT = 30;
+const CARB_PCT_OF_KCAL_MAX_DEFAULT = 50;
 // Carbohydrate's fixed energy density (Atwater) — grams per kcal, same role as KCAL_PER_G_FAT.
 const KCAL_PER_G_CARB = 4;
 
-// Sleep Efficiency Factor's rate — the literature's own 2-3%/hr range, defaulting to its
-// midpoint. A per-hour cost to fat-loss efficiency, not a fixed constant, so it's tunable
-// here like every other coefficient on this sheet.
+// Sleep Efficiency Factor's rate — 3%/hr, the top of the literature's own 2-3%/hr range and
+// the ledger app's Tune default. A per-hour cost to fat-loss efficiency, not a fixed
+// constant, so it's tunable here like every other coefficient on this sheet.
 const SLEEP_DEPRIVATION_PCT_PER_HOUR_KEY = 'SLEEP_DEPRIVATION_PCT_PER_HOUR';
-const SLEEP_DEPRIVATION_PCT_PER_HOUR_DEFAULT = 2.5;
+const SLEEP_DEPRIVATION_PCT_PER_HOUR_DEFAULT = 3;
 // What "hitting your sleep target" means — the plan sleep length (s) is measured against
 // this. The ledger app reads it off a separate Settings row (SLEEP_TARGET_HOURS); there's
 // nothing to store here, so it's a plain constant, and s defaults to exactly this — an
@@ -79,7 +77,7 @@ const SLEEP_TARGET_HOURS_DEFAULT = 8;
 
 // Intensity assumed for the activity target (3.0 walking, 5.0 compound
 // lifting, 7.0 jogging).
-const ACTIVITY_MET_FALLBACK = 2.75;
+const ACTIVITY_MET_FALLBACK = 3;
 const ACTIVITY_MET_SETTING_KEYS = ['ACTIVITY_MET', 'ACTIVITY_MET_DEFAULT'];
 
 function activityMet() {
@@ -93,9 +91,9 @@ function activityMet() {
 // Energy density of body fat — a population constant, not a personal one.
 const GENERIC_KCAL_PER_KG_FAT = 7700;
 
-// ACSM form: 1 MET = 3.5 mL O₂/kg/min and a litre of O₂ releases ~5 kcal (200
-// mL per kcal), so 3.5/200 kcal per MET per kg per minute.
-const MET_ML_O2_PER_KG_MIN_DEFAULT = 3.5;
+// ACSM form: 1 MET ≈ 3.5 mL O₂/kg/min (default 3, the ledger app's Tune κ) and a litre of
+// O₂ releases ~5 kcal (200 mL per kcal), so κ/200 kcal per MET per kg per minute.
+const MET_ML_O2_PER_KG_MIN_DEFAULT = 3;
 const ML_O2_PER_KCAL = 200;
 
 function kcalPerMetKgMin() {
@@ -151,10 +149,10 @@ function bmrKcal(bodyMassKg, heightCm, age, sex, formula = bmrFormula()) {
     : mifflinStJeorBmr(bodyMassKg, heightCm, age, sex);
 }
 
-// Thermic effect of food: TEI = (BMR + E_act − D) / (1 − f). Defaults to 0, which
-// is the plain sum with no digestion cost counted.
+// Thermic effect of food: TEI = (BMR + E_act − D) / (1 − f). Defaults to 13.5% of
+// intake, the ledger app's Tune starting f.
 const TEF_PERCENT_KEY = 'TEF_PERCENT_OF_INTAKE';
-const TEF_PERCENT_DEFAULT = 10;
+const TEF_PERCENT_DEFAULT = 13.5;
 const TEF_PERCENT_MAX = 90;
 
 function tefPercent() {
@@ -451,14 +449,17 @@ function projectTargetDaysAtFixedPct({ bodyMassKg, targetKg, weeklyPct }) {
 // The profile a fresh load (or Reset) seeds the sheet with — the ledger app
 // instead reads these from a saved weigh-in log and settings sheet, neither
 // of which exists here.
-const DEFAULT_BODY_MASS_KG = 82;
+// The same profile the ledger app's Tune shows a fresh user (TUNE_PROFILE_DEFAULTS there).
+const DEFAULT_BODY_MASS_KG = 79;
 const DEFAULT_HEIGHT_CM = 170;
-const DEFAULT_AGE = 30;
+const DEFAULT_AGE = 35;
 const DEFAULT_SEX = 'male';
-// Healthy body mass defaults from BMI rather than a fixed kg figure, so it
-// scales with whatever height is typed — 22.5 sits at the midpoint of the
-// 20-25 healthy band, comfortably inside the WHO 18.5-24.9 range too.
-const BMI_TARGET_DEFAULT = 22.5;
+const DEFAULT_NECK_CM = 38;
+const DEFAULT_WAIST_CM = 91;
+const DEFAULT_HIP_CM = 99;
+// 1% of body mass/week — the top of the sustainable 0.5-1%/week band, and the ledger app's
+// Tune default.
+const WEEKLY_FAT_LOSS_PCT_DEFAULT = 1;
 
 const FORMULA_FIELDS = [
   { key: 'KCAL_PER_MET_KG_MIN', inputId: 'formula-met-o2', fallback: () => MET_ML_O2_PER_KG_MIN_DEFAULT },
@@ -471,10 +472,7 @@ const FORMULA_FIELDS = [
   // The literature's own 2-3%/hr range, defaulting to its midpoint — a rate, not a fixed
   // constant, so it's tunable here like every other coefficient on this sheet.
   { key: SLEEP_DEPRIVATION_PCT_PER_HOUR_KEY, inputId: 'formula-sleep-deprivation-pct', fallback: () => SLEEP_DEPRIVATION_PCT_PER_HOUR_DEFAULT },
-  // Defaults to 0.5% of body mass/week — the floor of the sustainable
-  // 0.5-1%/week band (§1.8) — so a fresh load opens on a real journey
-  // instead of "already there".
-  { key: 'WEEKLY_FAT_LOSS_KG', inputId: 'formula-weekly-loss', fallback: () => weeklyFatLossKgFromPct(0.5, DEFAULT_BODY_MASS_KG) },
+  { key: 'WEEKLY_FAT_LOSS_KG', inputId: 'formula-weekly-loss', fallback: () => weeklyFatLossKgFromPct(WEEKLY_FAT_LOSS_PCT_DEFAULT, DEFAULT_BODY_MASS_KG) },
   { key: 'BODY_MASS_TARGET_KG', inputId: 'formula-target', fallback: () => BODY_MASS_TARGET_KG_DEFAULT },
   { key: TEF_PERCENT_KEY, inputId: 'formula-tef-pct', fallback: () => TEF_PERCENT_DEFAULT },
 ];
@@ -973,7 +971,7 @@ function renderProteinFields() {
 }
 
 // The fiber band: a floor scaled to how much you eat (14 g/1000 kcal, the USDA/DGA rule of
-// thumb) and a ceiling scaled to body weight (0.5 g/kg) — two different bases, unlike
+// thumb) and a ceiling scaled to body mass (0.5 g/kg) — two different bases, unlike
 // protein's single LBM, so neither end rides on a box the other computes.
 //
 // Reads formula-tei directly rather than re-deriving it: by the time renderFiberFields runs
@@ -1594,7 +1592,7 @@ function readMacroBandCoefficients() {
 }
 
 // The four macro bands at one day's mass and that day's own TEI — protein's
-// both ends and fiber's ceiling move with mass (lean mass and body weight
+// both ends and fiber's ceiling move with mass (lean mass and body mass
 // respectively); fiber's floor, fat and carb move with TEI instead, which is
 // constant pre-arrival and a step up to the maintenance level after it.
 function macroBandsAtMass(macro, mass, teiKcal) {
@@ -2711,9 +2709,9 @@ function loadDefaultInputs() {
   document.getElementById('formula-height').value = DEFAULT_HEIGHT_CM;
   document.getElementById('formula-age').value = DEFAULT_AGE;
   document.getElementById('formula-sex').value = DEFAULT_SEX;
-  // BMI_des is the typed default (targetMassKnownField below), so m_des is
-  // left for syncTargetMassFromBmi() to fill in from it and the height above.
-  document.getElementById('formula-target-bmi').value = BMI_TARGET_DEFAULT;
+  document.getElementById('formula-neck').value = DEFAULT_NECK_CM;
+  document.getElementById('formula-waist').value = DEFAULT_WAIST_CM;
+  document.getElementById('formula-hip').value = DEFAULT_HIP_CM;
 }
 
 function initSheet() {
@@ -2723,7 +2721,7 @@ function initSheet() {
   dualKnownField.TAU = 'tei';
   dualKnownField.DELTA_M = 'days';
   weeklyLossKnownField = 'kg';
-  targetMassKnownField = 'bmi';
+  targetMassKnownField = 'kg';
   document.querySelector('input[name="formula-bmr-formula"][value="mifflin"]').checked = true;
   document.querySelector('input[name="formula-lbm-formula"][value="boer"]').checked = true;
   loadDefaultInputs();
@@ -2940,7 +2938,8 @@ function stripEquationMacros(text) {
     .replace(/\\!/g, '')
     .replace(/\\min/g, 'min')
     .replace(/\\max/g, 'max')
-    .replace(/\\ln/g, 'ln');
+    .replace(/\\ln/g, 'ln')
+    .replace(/\\log/g, 'log');
 }
 
 // Numbers every equation across ALL fetched .tex fragments by combined
@@ -3097,8 +3096,8 @@ function renderReferencesSection(bibText) {
 // index.html ships only an empty #sheet-root. Everything it shows lives in
 // content/, numbered in page order: 0 the abstract, 1 the introduction, 2 the
 // literature review, 3 the system diagram (LaTeX fragment plus its own hand-
-// authored SVG, since renderReadmeLatex can't parse the raw TikZ figure it
-// wraps — see the FIGURE placeholder below), 4 the model text, 5 the dietary
+// authored SVGs, one per raw TikZ figure renderReadmeLatex can't parse —
+// see the FIGURE placeholders below), 4 the model text, 5 the dietary
 // requirements, 6 the case study, 7 the conclusion (LaTeX fragments), 8 the
 // glossary (LaTeX fragment), 9 the bibliography (BibTeX), 10-12 the
 // appendices (calculation UIs).
@@ -3112,6 +3111,8 @@ async function loadSheet() {
     literatureReviewSource,
     diagramTexSource,
     systemDiagramHtml,
+    inverseDiagramHtml,
+    fullLoopDiagramHtml,
     texSource,
     dietaryRequirementsSource,
     caseStudySource,
@@ -3127,6 +3128,8 @@ async function loadSheet() {
     fetch('content/2 Literature Review.tex', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/3 System Diagram.tex', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/3 System Diagram.html', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/3 Inverse System Diagram.html', { cache: 'no-store' }).then((response) => response.text()),
+    fetch('content/3 Full Loop Diagram.html', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/4 Human Metabolic System Model.tex', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/5 Dietary Requirements.tex', { cache: 'no-store' }).then((response) => response.text()),
     fetch('content/6 Case Study.tex', { cache: 'no-store' }).then((response) => response.text()),
@@ -3153,10 +3156,12 @@ async function loadSheet() {
   sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(introSource, citationNumberByKey, equationNumberByLabel));
   sheetRoot.insertAdjacentHTML('beforeend', renderReadmeLatex(literatureReviewSource, citationNumberByKey, equationNumberByLabel));
 
-  // The FIGURE placeholder sits exactly where \begin{figure} appears in the
-  // .tex source, so the SVG lands in the right spot regardless of how the
-  // surrounding headings/subsections are arranged.
-  const diagramHtml = renderReadmeLatex(diagramTexSource, citationNumberByKey, equationNumberByLabel).replace('<!--FIGURE-->', systemDiagramHtml);
+  // Each FIGURE placeholder sits exactly where its \begin{figure} appears in
+  // the .tex source, so each SVG lands in the right spot regardless of how the
+  // surrounding headings/subsections are arranged — filled in source order.
+  const figureHtml = [systemDiagramHtml, inverseDiagramHtml, fullLoopDiagramHtml];
+  const diagramHtml = renderReadmeLatex(diagramTexSource, citationNumberByKey, equationNumberByLabel)
+    .replace(/<!--FIGURE-->/g, () => figureHtml.shift() ?? '');
   sheetRoot.insertAdjacentHTML('beforeend', diagramHtml);
 
   const modelHtml = renderReadmeLatex(texSource, citationNumberByKey, equationNumberByLabel);

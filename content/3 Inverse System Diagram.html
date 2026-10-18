@@ -1,0 +1,141 @@
+<figure class="mtc-figure" id="fig_inversediagram">
+<svg viewBox="120 32 1325 488" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Block diagram of the inverse human metabolic system: the desired body mass change, the measured body mass, the fixed parameters and time enter on the left, the desired change defines the daily energy deficit and then the energy balance, and the remaining inputs of the forward model leave on the right as outputs" style="width:100%;height:auto;display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <defs>
+    <marker id="invArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"></path>
+    </marker>
+  </defs>
+
+  <rect x="260" y="40" width="1050" height="460" rx="14" fill="#dbeafe" fill-opacity="0.45" stroke="var(--ink-faint)" stroke-width="1.8"></rect>
+  <text x="785" y="65" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--ink)" letter-spacing="0.5">Inverse Human Metabolic System Model</text>
+
+  <g fill="var(--ink)" text-anchor="middle">
+    <!-- Input blocks on the left, as in Fig. 1: m into the rolling average, h, a, σ and t into BMR. -->
+    <rect x="320" y="60" width="180" height="55" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="410" y="84" font-size="11.5" font-weight="600">7-Day Rolling Average</text>
+    <text x="410" y="101" font-size="12" fill="var(--ink-soft)">m̄</text>
+
+    <rect x="320" y="145" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="410" y="173" font-size="11.5" font-weight="600">Basal Metabolic Rate</text>
+    <text x="410" y="192" font-size="12" fill="var(--ink-soft)">BMR</text>
+
+    <rect x="320" y="288" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="410" y="316" font-size="11.5" font-weight="600">Daily Energy Deficit</text>
+    <text x="410" y="335" font-size="12" fill="var(--ink-soft)">D = Δm_des × ρ / 7</text>
+
+    <rect x="580" y="265" width="180" height="110" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="670" y="312" font-size="11.5" font-weight="600">Energy Balance</text>
+    <text x="670" y="335" font-size="12" fill="var(--ink-soft)">TEI = D + BMR + AEE + TEF</text>
+
+    <!-- Output blocks on the right: each hands back one input of Fig. 1. -->
+    <rect x="850" y="235" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="940" y="263" font-size="11.5" font-weight="600">Activity Energy Expenditure</text>
+    <text x="940" y="282" font-size="12" fill="var(--ink-soft)">AEE</text>
+
+    <rect x="850" y="325" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="940" y="353" font-size="11.5" font-weight="600">Thermic Effect of Food</text>
+    <text x="940" y="372" font-size="12" fill="var(--ink-soft)">TEF</text>
+
+    <rect x="850" y="415" width="180" height="65" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="940" y="443" font-size="11.5" font-weight="600">Sleep Deprivation Effect</text>
+    <text x="940" y="462" font-size="12" fill="var(--ink-soft)">SD</text>
+
+    <!-- The dietary requirements TEI sets, inside the boundary with the rest. -->
+    <rect x="1125" y="240" width="170" height="50" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="1210" y="261" font-size="11.5" font-weight="600">Protein</text>
+    <text x="1210" y="279" font-size="12" fill="var(--ink-soft)">P = p × LBM</text>
+
+    <rect x="1125" y="302" width="170" height="50" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="1210" y="323" font-size="11.5" font-weight="600">Dietary Fiber</text>
+    <text x="1210" y="341" font-size="12" fill="var(--ink-soft)">F = b × TEI / 1000</text>
+
+    <rect x="1125" y="364" width="170" height="50" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="1210" y="385" font-size="11.5" font-weight="600">Fat</text>
+    <text x="1210" y="403" font-size="12" fill="var(--ink-soft)">G = k × TEI / 9</text>
+
+    <rect x="1125" y="426" width="170" height="50" rx="8" fill="var(--bg-alt)" stroke="var(--ink-faint)" stroke-width="1.4"></rect>
+    <text x="1210" y="447" font-size="11.5" font-weight="600">Carbohydrate</text>
+    <text x="1210" y="465" font-size="12" fill="var(--ink-soft)">C = q × TEI / 4</text>
+  </g>
+
+  <!-- Every arrow carries one named signal and meets its block's edge perpendicularly. -->
+  <g fill="none" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#invArrow)">
+    <path d="M130,87 L320,87"></path>
+    <path d="M130,165 L320,165"></path>
+    <path d="M130,336 L320,336"></path>
+    <path d="M130,304 L320,304"></path>
+    <path d="M250,304 L250,195 L320,195"></path>
+
+    <path d="M410,115 L410,145"></path>
+    <path d="M500,87 L940,87 L940,235"></path>
+    <path d="M500,177 L670,177 L670,265"></path>
+
+    <path d="M500,320 L580,320"></path>
+    <path d="M760,282 L850,282"></path>
+    <path d="M760,357 L850,357"></path>
+    <path d="M628,375 L628,447 L850,447"></path>
+    <path d="M712,375 L712,402 L1040,402 L1040,361"></path>
+
+    <path d="M1030,267 L1065,267 L1065,215 L1330,215"></path>
+    <path d="M1030,447 L1065,447 L1065,490 L1330,490"></path>
+
+    <path d="M1030,357 L1100,357 L1100,265 L1125,265"></path>
+    <path d="M1100,357 L1100,327 L1125,327"></path>
+    <path d="M1100,357 L1100,389 L1125,389"></path>
+    <path d="M1100,357 L1100,451 L1125,451"></path>
+    <path d="M1295,265 L1330,265"></path>
+    <path d="M1295,327 L1330,327"></path>
+    <path d="M1295,389 L1330,389"></path>
+    <path d="M1295,451 L1330,451"></path>
+  </g>
+  <circle cx="250" cy="304" r="2.5" fill="var(--ink-faint)"></circle>
+  <circle cx="1040" cy="357" r="2.5" fill="var(--ink-faint)"></circle>
+  <circle cx="1100" cy="357" r="2.5" fill="var(--ink-faint)"></circle>
+
+  <g font-size="10.5" fill="var(--ink-soft)">
+    <text x="418" y="134" text-anchor="start">m̄</text>
+    <text x="730" y="80" text-anchor="middle">m̄</text>
+    <text x="600" y="170" text-anchor="middle">BMR</text>
+    <text x="258" y="215" text-anchor="start">t</text>
+    <text x="540" y="313" text-anchor="middle">D</text>
+    <text x="805" y="275" text-anchor="middle">AEE</text>
+    <text x="805" y="350" text-anchor="middle">TEF</text>
+    <text x="740" y="440" text-anchor="middle">SD</text>
+    <text x="800" y="396" text-anchor="middle">TEI</text>
+  </g>
+
+  <g font-size="11.5" fill="var(--ink-soft)">
+    <text x="135" y="80" font-size="12.5" fill="var(--ink)">m</text>
+    <text x="135" y="102" text-anchor="start">(measured</text>
+    <text x="135" y="118" text-anchor="start">body mass, kg)</text>
+
+    <text x="135" y="158" text-anchor="start">h, a, σ</text>
+    <text x="135" y="180" text-anchor="start">(parameters)</text>
+
+    <text x="135" y="329" font-size="12.5" fill="var(--ink)">Δm_des</text>
+    <text x="135" y="352" text-anchor="start">(desired body mass</text>
+    <text x="135" y="367" text-anchor="start">change, kg/week)</text>
+
+    <text x="135" y="297" font-size="12.5" fill="var(--ink)">t</text>
+    <text x="147" y="297" text-anchor="start">(time, days)</text>
+
+    <text x="1336" y="212" text-anchor="start">τ, MET</text>
+    <text x="1336" y="228" text-anchor="start">(activity)</text>
+
+    <text x="1070" y="350" text-anchor="middle">TEI</text>
+
+    <text x="1336" y="487" text-anchor="start">s</text>
+    <text x="1336" y="503" text-anchor="start">(sleep, hours)</text>
+
+    <text x="1336" y="262" font-size="12.5" fill="var(--ink)">P</text>
+    <text x="1336" y="277" text-anchor="start">(g/day)</text>
+    <text x="1336" y="324" font-size="12.5" fill="var(--ink)">F</text>
+    <text x="1336" y="339" text-anchor="start">(g/day)</text>
+    <text x="1336" y="386" font-size="12.5" fill="var(--ink)">G</text>
+    <text x="1336" y="401" text-anchor="start">(g/day)</text>
+    <text x="1336" y="448" font-size="12.5" fill="var(--ink)">C</text>
+    <text x="1336" y="463" text-anchor="start">(g/day)</text>
+  </g>
+</svg>
+<figcaption>Fig. 2. Block diagram of the inverse human metabolic system model, used as a feedforward controller: Fig. 1 run backwards; the shaded region marks the system boundary. Inputs enter from the left: the measured body mass m into the 7-Day Rolling Average, whose m̄ feeds the Basal Metabolic Rate and Activity Energy Expenditure blocks; height, age, and sex (h, a, σ) into the Basal Metabolic Rate, whose BMR feeds the Energy Balance; elapsed time (t) into the Daily Energy Deficit and the Basal Metabolic Rate; and the desired body mass change Δm_des, which defines the Daily Energy Deficit D; the glycogen and water swing is held constant, so it has no block here. The Energy Balance block then splits the intake that delivers D into its remaining components, and the other inputs of Fig. 1 leave on the right as outputs: activity (τ, MET) from the Activity Energy Expenditure block, total energy intake (TEI) from the Thermic Effect of Food block and the Energy Balance, and sleep duration (s) from the Sleep Deprivation Effect block. TEI in turn sets the daily Protein, Dietary Fiber, Fat, and Carbohydrate requirements (P, F, G, C) of Section 5, which leave the boundary alongside them.</figcaption>
+</figure>
