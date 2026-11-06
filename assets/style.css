@@ -1233,6 +1233,15 @@ ul.limits li b {
     margin: 0 0 1.25rem;
 }
 
+/* A Case Study chart image, white like the paper it's printed on. */
+.case-figure {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    background: #fff;
+}
+
 .mtc-figure:has(.mass-trajectory-chart:empty) {
     display: none;
 }

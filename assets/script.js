@@ -2965,6 +2965,23 @@ function buildEquationNumberByLabel(texSources) {
   return equationNumberByLabel;
 }
 
+// Same for figures: every \begin{figure} in page order, so \ref{fig_x} in
+// any fragment prints the number its caption shows.
+let figureNumberByLabel = {};
+
+function buildFigureNumberByLabel(texSources) {
+  const byLabel = {};
+  let total = 0;
+  texSources.forEach((texSource) => {
+    texSource.split(/\\begin\{figure\}/).slice(1).forEach((block) => {
+      total += 1;
+      const label = block.split(/\\end\{figure\}/)[0].match(/\\label\{([\w-]+)\}/);
+      if (label) byLabel[label[1]] = total;
+    });
+  });
+  return byLabel;
+}
+
 // A small LaTeX-to-HTML converter for "4 Human Metabolic System Model.tex"
 // and the other content/*.tex fragments, scoped to exactly the constructs
 // they use: \section/\subsection/\subsubsection (id auto-derived via
@@ -2986,6 +3003,10 @@ function renderReadmeLatex(texSource, citationNumberByKey, equationNumberByLabel
       .replace(/\\eqref\{([\w-]+)\}/g, (match, label) => {
         const num = equationNumberByLabel[label];
         return num ? `<a href="#${label}">(${num})</a>` : match;
+      })
+      .replace(/\\ref\{([\w-]+)\}/g, (match, label) => {
+        const num = figureNumberByLabel[label];
+        return num ? `<a href="#${label}">${num}</a>` : match;
       })
       .replace(/\\cite\{([\w-]+)\}/g, (match, key) => {
         const num = citationNumberByKey[key];
@@ -3046,10 +3067,22 @@ function renderReadmeLatex(texSource, citationNumberByKey, equationNumberByLabel
     // replaced by a placeholder the caller substitutes with hand-authored
     // HTML for the same figure (an SVG rendition), keeping it exactly where
     // \begin{figure} puts it in the .tex source rather than guessed by heading.
+    // An \includegraphics figure renders here as an image with its caption.
     if (/^\\begin\{figure\}/.test(line)) {
       flushParagraph();
-      while (i < lines.length && !/^\\end\{figure\}/.test(lines[i].trim())) i += 1;
-      htmlParts.push('<!--FIGURE-->');
+      const block = [];
+      while (i < lines.length && !/^\\end\{figure\}/.test(lines[i].trim())) block.push(lines[i++].trim());
+      const text = block.join('\n');
+      const image = text.match(/\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}/);
+      if (!image) {
+        htmlParts.push('<!--FIGURE-->');
+        continue;
+      }
+      const label = (text.match(/\\label\{([\w-]+)\}/) || [])[1];
+      const caption = (text.match(/^\\caption(?:\[[^\]]*\])?\{(.*)\}$/m) || [])[1] || '';
+      const num = label ? figureNumberByLabel[label] : '';
+      const short = (text.match(/^\\caption\[([^\]]*)\]/m) || [])[1] || '';
+      htmlParts.push(`<figure class="mtc-figure"${label ? ` id="${label}"` : ''}><img class="case-figure" src="${image[1]}" alt="${stripLatexEscapes(short).replace(/"/g, '&quot;')}" loading="lazy"><figcaption>Fig. ${num}. ${renderMarkdownInline(resolveRefs(caption))}</figcaption></figure>`);
       continue;
     }
 
@@ -3149,6 +3182,9 @@ async function loadSheet() {
   // \label defined in another (e.g. the Model text) with the same number
   // the reader sees printed on that equation's own box.
   const equationNumberByLabel = buildEquationNumberByLabel([
+    diagramTexSource, texSource, dietaryRequirementsSource, caseStudySource, conclusionSource,
+  ]);
+  figureNumberByLabel = buildFigureNumberByLabel([
     diagramTexSource, texSource, dietaryRequirementsSource, caseStudySource, conclusionSource,
   ]);
 

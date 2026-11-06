@@ -18,7 +18,8 @@ This model is provided for educational and informational purposes only and is no
 - `content/3 Full Loop Diagram.html` — Fig. 3, the full-loop block diagram, as SVG for the site.
 - `content/4 Human Metabolic System Model.tex` — the model's equations: the body profile (including Boer and U.S. Navy lean body mass), the four basal metabolic rates (Mifflin-St Jeor, Katch-McArdle, calibrated, adapted) and their average, the energy balance, and the mass trajectory.
 - `content/5 Dietary Requirements.tex` — protein, dietary fiber, fat, and carbohydrate targets, plus deficit rate/magnitude safety limits.
-- `content/6 Case Study.tex` — the case study.
+- `content/6 Case Study.tex` — the case study: a paragraph introducing the subject, then Figs. 4–9 (body mass, calorie balance, intake against the four BMRs, the macronutrient bands, activity, sleep) over 130 days of logged data.
+- `assets/figures/` — the case study's chart images, exported from the ledger app's Health → Chart page on its All range.
 - `content/7 Conclusion.tex` — the conclusion.
 - `content/8 Glossary.tex` — acronyms, symbols and variables, subscripts and indices.
 - `content/9 References.bib` — the model's bibliography.
